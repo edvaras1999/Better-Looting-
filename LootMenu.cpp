@@ -982,7 +982,7 @@ void LootMenu::SetIndex(SInt32 index)
 }
 
 
-void LootMenu::TakeItem()
+void LootMenu::TakeItem(bool a_all)
 {
 	BSSpinLockGuard guard(ms_lock);
 
@@ -1032,7 +1032,7 @@ void LootMenu::TakeItem()
 			}
 		}
 
-		if (numItems > 1 && IsDownLShift())
+		if (!a_all && numItems > 1 && IsDownLShift())
 		{
 			bTakeSingle = true;
 			numItems = 1;
@@ -1084,6 +1084,23 @@ void LootMenu::TakeItem()
 	{
 		m_items.erase(it);
 		InvokeScaleform_Open();
+	}
+}
+
+
+void LootMenu::TakeAllItems()
+{
+	BSSpinLockGuard guard(ms_lock);
+
+	if (!IsOpen())
+		return;
+
+	// cada TakeItem retira o primeiro item da lista; o limite evita ciclos infinitos
+	size_t remaining = m_items.size();
+	while (remaining-- > 0 && !m_items.empty() && IsOpen())
+	{
+		m_selectedIndex = 0;
+		TakeItem(true);
 	}
 }
 
@@ -1268,7 +1285,7 @@ void LootMenu::UI_Init(GFxMovieView *a_view)
 	else
 		_MESSAGE("AVISO: LootMenuIE.swf nao respondeu a getVersion()");
 
-	// valores por omissao do QuickLootIE (ver doc/settings.md do IE)
+	// definicoes da janela (BetterLooting.ini)
 	double scale = 1.0;
 	if (Settings::iScale >= 0)
 	{
@@ -1282,27 +1299,44 @@ void LootMenu::UI_Init(GFxMovieView *a_view)
 	if (Settings::iItemLimit > 0)
 		maxLines = (Settings::iItemLimit > 25) ? 25 : Settings::iItemLimit;
 
+	double minLines = Settings::iMinLines;
+	if (minLines < 0) minLines = 0;
+	if (minLines > maxLines) minLines = maxLines;
+
+	// ancora: 0 = esquerda/cima, 1 = centro, 2 = direita/baixo
+	int ax = Settings::iAnchorX; if (ax < 0) ax = 0; if (ax > 2) ax = 2;
+	int ay = Settings::iAnchorY; if (ay < 0) ay = 0; if (ay > 2) ay = 2;
+
+	double alphaNormal = Settings::iAlphaNormal;
+	if (alphaNormal < 10) alphaNormal = 10; if (alphaNormal > 100) alphaNormal = 100;
+	double alphaEmpty = Settings::iAlphaEmpty;
+	if (alphaEmpty < 0) alphaEmpty = 0; if (alphaEmpty > 100) alphaEmpty = 100;
+
 	GFxValue settings;
 	a_view->CreateObject(&settings);
-	settings.SetMember("minLines", GFxValue((double)0));
+	settings.SetMember("minLines", GFxValue(minLines));
 	settings.SetMember("maxLines", GFxValue(maxLines));
-	settings.SetMember("offsetX", GFxValue((double)100));
-	settings.SetMember("offsetY", GFxValue((double)-200));
+	settings.SetMember("offsetX", GFxValue((double)Settings::iOffsetX));
+	settings.SetMember("offsetY", GFxValue((double)Settings::iOffsetY));
 	settings.SetMember("scale", GFxValue(scale));
-	settings.SetMember("alphaNormal", GFxValue((double)1.0));
-	settings.SetMember("alphaEmpty", GFxValue((double)0.3));
-	settings.SetMember("anchorFractionX", GFxValue((double)0.0));
-	settings.SetMember("anchorFractionY", GFxValue((double)0.0));
+	settings.SetMember("alphaNormal", GFxValue(alphaNormal * 0.01));
+	settings.SetMember("alphaEmpty", GFxValue(alphaEmpty * 0.01));
+	settings.SetMember("anchorFractionX", GFxValue(ax * 0.5));
+	settings.SetMember("anchorFractionY", GFxValue(ay * 0.5));
 
 	GFxValue infoColumns;
 	a_view->CreateArray(&infoColumns);
-	infoColumns.PushBack(GFxValue("value"));
-	infoColumns.PushBack(GFxValue("weight"));
+	if (Settings::bShowValue)
+		infoColumns.PushBack(GFxValue("value"));
+	if (Settings::bShowWeight)
+		infoColumns.PushBack(GFxValue("weight"));
+	if (Settings::bShowValuePerWeight)
+		infoColumns.PushBack(GFxValue("valuePerWeight"));
 	settings.SetMember("infoColumns", infoColumns);
 
-	settings.SetMember("showItemIcons", GFxValue(true));
+	settings.SetMember("showItemIcons", GFxValue(Settings::bShowItemIcons));
 
-	// as listas de dados da barra de botoes e da barra de info (vazias na v0.1)
+	// as listas de dados da barra de botoes e da barra de info (a barra de botoes enche em UI_Open)
 	GFxValue emptyButtons;
 	a_view->CreateArray(&emptyButtons);
 	a_view->SetVariable("_root.lootMenu.buttonBar.dataProvider", emptyButtons);
@@ -1389,6 +1423,46 @@ void LootMenu::UI_Open(GFxMovieView *a_view)
 
 	a_view->SetVariable("_root.lootMenu.itemList.dataProvider", items);
 	a_view->Invoke("_root.lootMenu.itemList.invalidateData", nullptr, nullptr, 0);
+
+	// barra de botoes: o indice e o numero da tecla (o SWF desenha o icone dessa tecla)
+	{
+		static char *sSteal = g_gameSettingCollection->Get("sSteal")->data.s;
+		static char *sTake = g_gameSettingCollection->Get("sTake")->data.s;
+		static char *sSearch = g_gameSettingCollection->Get("sSearch")->data.s;
+		Setting *takeAllSetting = g_gameSettingCollection->Get("sTakeAll");
+		const char *sTakeAll = (takeAllSetting && takeAllSetting->data.s) ? takeAllSetting->data.s : "Take All";
+
+		bool isStolen = m_containerRef->IsOffLimits();
+
+		InputStringHolder *holder = InputStringHolder::GetSingleton();
+		UInt32 keyTake = InputMappingManager::GetSingleton()->GetMappedKey(holder->activate, BSInputDevice::kType_Keyboard);
+		if (keyTake == InputMappingManager::kInvalid)
+			keyTake = 18;	// E
+
+		GFxValue buttons;
+		a_view->CreateArray(&buttons);
+
+		const char *labels[3] = { isStolen ? sSteal : sTake, sTakeAll, sSearch };
+		double keys[3] = { (double)keyTake, (double)Settings::iKeyTakeAll, (double)Settings::iKeySearch };
+		for (int i = 0; i < 3; ++i)
+		{
+			GFxValue label;
+			SetGFxString(a_view, label, labels[i]);
+			GFxValue index = keys[i];
+			GFxValue stolenFlag = isStolen;
+
+			GFxValue button;
+			a_view->CreateObject(&button);
+			button.SetMember("label", label);
+			button.SetMember("index", index);
+			button.SetMember("stolen", stolenFlag);
+			buttons.PushBack(button);
+		}
+
+		a_view->SetVariable("_root.lootMenu.buttonBar.dataProvider", buttons);
+		a_view->Invoke("_root.lootMenu.buttonBar.invalidateData", nullptr, nullptr, 0);
+	}
+
 	a_view->Invoke("_root.lootMenu.refresh", nullptr, nullptr, 0);
 
 	GFxValue index = (double)m_selectedIndex;

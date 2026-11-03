@@ -10,6 +10,7 @@
 
 #include "Hooks.h"
 #include "LootMenu.h"
+#include "Settings.h"
 
 //========================================================
 // input patches
@@ -137,7 +138,7 @@ public:
 					typedef void(*FnDebug_Notification)(const char *, bool, bool);
 					const FnDebug_Notification fnDebug_Notification = (FnDebug_Notification)0x008997A0;
 
-					fnDebug_Notification((disabled ? "QuickLoot has been disabled." : "QuickLoot has been enabled."), false, true);
+					fnDebug_Notification((disabled ? "Better Looting has been disabled." : "Better Looting has been enabled."), false, true);
 				}
 			}
 
@@ -173,6 +174,13 @@ public:
 
 	static FnStartActivation fnStartActivationOld;
 
+	// abre o contentor/cadaver normalmente (sem passar pelo menu de loot)
+	static void OpenContainer()
+	{
+		if (fnStartActivationOld)
+			(static_cast<PlayerCharacterEx *>(g_thePlayer)->*fnStartActivationOld)();
+	}
+
 	void StartActivation_Hook()
 	{
 		LootMenu *lootMenu = LootMenu::GetSingleton();
@@ -194,6 +202,114 @@ public:
 };
 
 PlayerCharacterEx::FnStartActivation PlayerCharacterEx::fnStartActivationOld;
+
+
+// Com o menu de loot aberto: C = Pegar tudo, R premido = Procurar.
+// Estas teclas sao retiradas da lista de eventos, para o jogo nao fazer o que
+// elas fariam com o menu fechado (empunhar arma, etc.).
+class PlayerControlsEx : public PlayerControls
+{
+public:
+	typedef EventResult(PlayerControlsEx::*FnReceiveEvent)(InputEvent **evn, BSTEventSource<InputEvent *> *source);
+
+	static FnReceiveEvent fnReceiveEventOld;
+
+	EventResult ReceiveEvent_Hook(InputEvent **evn, BSTEventSource<InputEvent *> *source)
+	{
+		if (evn && *evn)
+		{
+			FilterEvents(evn);
+			if (!*evn)
+				return kEvent_Continue;
+		}
+
+		return (this->*fnReceiveEventOld)(evn, source);
+	}
+
+	static void FilterEvents(InputEvent **evn)
+	{
+		static bool s_takeAllHeld = false;	// C premido e consumido
+		static bool s_searchHeld = false;	// R premido e consumido
+		static bool s_searchDone = false;	// Procurar ja disparou neste premir
+
+		LootMenu *lootMenu = LootMenu::GetSingleton();
+		const bool visible = (lootMenu && lootMenu->IsVisible());
+
+		InputEvent *prev = nullptr;
+		InputEvent *cur = *evn;
+		while (cur)
+		{
+			InputEvent *next = cur->next;
+			bool consume = false;
+
+			if (cur->eventType == InputEvent::kEventType_Button && cur->deviceType == BSInputDevice::kType_Keyboard)
+			{
+				ButtonEvent *btn = static_cast<ButtonEvent *>(cur);
+				const UInt32 key = btn->keyMask;
+
+				if (key == (UInt32)Settings::iKeyTakeAll)
+				{
+					if (visible && btn->IsDown())
+					{
+						s_takeAllHeld = true;
+						lootMenu->TakeAllItems();
+					}
+
+					if (s_takeAllHeld)
+					{
+						consume = true;
+						if (btn->IsUp())
+							s_takeAllHeld = false;
+					}
+				}
+				else if (key == (UInt32)Settings::iKeySearch)
+				{
+					if (visible && btn->IsDown())
+					{
+						s_searchHeld = true;
+						s_searchDone = false;
+					}
+
+					if (s_searchHeld)
+					{
+						consume = true;
+
+						// premido o tempo definido: abre o contentor (um toque rapido nao faz nada)
+						if (btn->IsPressed() && !s_searchDone && btn->timer * 1000.0f >= (float)Settings::iSearchHoldMs)
+						{
+							s_searchDone = true;
+							PlayerCharacterEx::OpenContainer();
+						}
+
+						if (btn->IsUp())
+							s_searchHeld = false;
+					}
+				}
+			}
+
+			if (consume)
+			{
+				if (prev)
+					prev->next = next;
+				else
+					*evn = next;
+			}
+			else
+			{
+				prev = cur;
+			}
+
+			cur = next;
+		}
+	}
+
+	static void InitHook()
+	{
+		fnReceiveEventOld = SafeWrite32(0x010D4680 + 0x04 * 1, &ReceiveEvent_Hook);
+	}
+};
+
+PlayerControlsEx::FnReceiveEvent PlayerControlsEx::fnReceiveEventOld;
 
 
 //========================================================
@@ -338,6 +454,7 @@ namespace Hooks
 #endif
 		ReadyWeaponHandlerEx::InitHook();			// [R] or (X)
 		PlayerCharacterEx::InitHook();				// [E] or (A)
+		PlayerControlsEx::InitHook();				// [C] Pegar tudo, [R] premido Procurar
 
 		// crosshair text patches
 		TESObjectCONTEx::InitHook();

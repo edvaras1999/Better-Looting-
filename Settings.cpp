@@ -14,11 +14,25 @@ bool	Settings::bCloseIfEmpty = false;
 bool	Settings::bUseConsole = false;
 bool	Settings::bForceAnsi = false;
 bool	Settings::bDisableLootSingle = false;
+bool	Settings::bShowValue = true;
+bool	Settings::bShowWeight = true;
+bool	Settings::bShowValuePerWeight = false;
+bool	Settings::bShowItemIcons = true;
 int		Settings::iOpacity = 25;
 int		Settings::iScale = 100;
 int		Settings::iPositionX = -1;
 int		Settings::iPositionY = -1;
 int		Settings::iItemLimit = -1;
+int		Settings::iKeyTakeAll = 46;		// C
+int		Settings::iKeySearch = 19;		// R
+int		Settings::iSearchHoldMs = 500;
+int		Settings::iAnchorX = 0;
+int		Settings::iAnchorY = 0;
+int		Settings::iOffsetX = 100;
+int		Settings::iOffsetY = -200;
+int		Settings::iMinLines = 0;
+int		Settings::iAlphaNormal = 100;
+int		Settings::iAlphaEmpty = 30;
 
 bool Settings::SetBool(const char *name, bool val)
 {
@@ -54,6 +68,22 @@ bool Settings::SetBool(const char *name, bool val)
 	{
 		bDisableLootSingle = val;
 	}
+	else if (_stricmp(name, "bShowValue") == 0)
+	{
+		bShowValue = val;
+	}
+	else if (_stricmp(name, "bShowWeight") == 0)
+	{
+		bShowWeight = val;
+	}
+	else if (_stricmp(name, "bShowValuePerWeight") == 0)
+	{
+		bShowValuePerWeight = val;
+	}
+	else if (_stricmp(name, "bShowItemIcons") == 0)
+	{
+		bShowItemIcons = val;
+	}
 	else
 	{
 		return false;
@@ -86,6 +116,46 @@ bool Settings::SetInt(const char *name, int val)
 	else if (_stricmp(name, "iItemLimit") == 0)
 	{
 		iItemLimit = val;
+	}
+	else if (_stricmp(name, "iKeyTakeAll") == 0)
+	{
+		iKeyTakeAll = val;
+	}
+	else if (_stricmp(name, "iKeySearch") == 0)
+	{
+		iKeySearch = val;
+	}
+	else if (_stricmp(name, "iSearchHoldMs") == 0)
+	{
+		iSearchHoldMs = val;
+	}
+	else if (_stricmp(name, "iAnchorX") == 0)
+	{
+		iAnchorX = val;
+	}
+	else if (_stricmp(name, "iAnchorY") == 0)
+	{
+		iAnchorY = val;
+	}
+	else if (_stricmp(name, "iOffsetX") == 0)
+	{
+		iOffsetX = val;
+	}
+	else if (_stricmp(name, "iOffsetY") == 0)
+	{
+		iOffsetY = val;
+	}
+	else if (_stricmp(name, "iMinLines") == 0)
+	{
+		iMinLines = val;
+	}
+	else if (_stricmp(name, "iAlphaNormal") == 0)
+	{
+		iAlphaNormal = val;
+	}
+	else if (_stricmp(name, "iAlphaEmpty") == 0)
+	{
+		iAlphaEmpty = val;
 	}
 	else
 	{

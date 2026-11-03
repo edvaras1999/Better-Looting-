@@ -57,7 +57,8 @@ public:
 	void Update();
 	void Sort();
 	void SetIndex(SInt32 index);
-	void TakeItem();
+	void TakeItem(bool a_all = false);
+	void TakeAllItems();
 
 	// for debugging purpose
 	void Dump();
