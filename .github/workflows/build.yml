@@ -35,6 +35,13 @@ jobs:
               Write-Host "Movido para a pasta certa: $name -> $($map[$name])"
             }
           }
+          # O arquivo da libSkyrim pode ter outro nome (o GitHub troca espacos e parenteses): qualquer .7z com "quick" e "loot" no nome serve.
+          foreach ($f in Get-ChildItem $ws -File -Filter '*.7z' | Where-Object { $_.Name -match '(?i)quick.?loot' }) {
+            $dir = Join-Path $ws 'third_party'
+            New-Item -ItemType Directory -Force $dir | Out-Null
+            Move-Item $f.FullName (Join-Path $dir $f.Name) -Force
+            Write-Host "Movido para third_party: $($f.Name)"
+          }
 
       - name: Preparar o MSBuild
         uses: microsoft/setup-msbuild@v2
@@ -44,8 +51,19 @@ jobs:
         run: |
           $ErrorActionPreference = 'Stop'
           $ws = $env:GITHUB_WORKSPACE
-          $archive = Get-ChildItem (Join-Path $ws 'third_party') -Filter 'Quick_Loot*.7z' -ErrorAction SilentlyContinue | Select-Object -First 1
-          if (-not $archive) { throw 'Falta o ficheiro Quick_Loot_1_1f_Source_Files__for_modders_-73096-1-1f.7z na pasta third_party do repositorio.' }
+          # Procura o .7z da libSkyrim: primeiro em third_party, depois em qualquer pasta do repositorio.
+          $archive = Get-ChildItem (Join-Path $ws 'third_party') -Filter '*.7z' -ErrorAction SilentlyContinue | Select-Object -First 1
+          if (-not $archive) {
+            $archive = Get-ChildItem $ws -Recurse -File -Filter '*.7z' -ErrorAction SilentlyContinue |
+              Where-Object { $_.FullName -notmatch '\\ql_src\\' } |
+              Sort-Object { if ($_.Name -match '(?i)quick.?loot') { 0 } else { 1 } } | Select-Object -First 1
+          }
+          if (-not $archive) {
+            Write-Host 'Ficheiros no repositorio (raiz e third_party):'
+            Get-ChildItem $ws -File | ForEach-Object { '  ' + $_.Name }
+            Get-ChildItem (Join-Path $ws 'third_party') -ErrorAction SilentlyContinue | ForEach-Object { '  third_party\' + $_.Name }
+            throw 'Nao encontrei nenhum ficheiro .7z no repositorio. Faca upload do arquivo do QuickLoot 1.1f (Source Files for modders).'
+          }
           Write-Host "A usar: $($archive.FullName) ($($archive.Length) bytes)"
           & "C:\Program Files\7-Zip\7z.exe" x $archive.FullName "-o$ws\ql_src" -y | Out-Null
           if ($LASTEXITCODE -ne 0) { throw "O 7-Zip nao conseguiu abrir o arquivo (codigo $LASTEXITCODE)." }
