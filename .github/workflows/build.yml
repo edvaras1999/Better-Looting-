@@ -87,6 +87,14 @@ jobs:
             $new = $txt -replace 'ToolsVersion="[0-9.]+"', 'ToolsVersion="Current"'
             if ($new -ne $txt) { Set-Content -Path $p.FullName -Value $new -Encoding utf8; Write-Host "ToolsVersion ajustado: $($p.Name)" }
           }
+          # PapyrusFunctions.h (libSkyrim) falta um "typename" que os compiladores antigos aceitavam
+          # e o v143 nao: sem isto, qualquer funcao nativa Papyrus da erro C2275.
+          $pf = Join-Path $dll 'SKSE\include\SKSE\PapyrusFunctions.h'
+          $txt = Get-Content -Raw $pf
+          $fixed = [regex]::Replace($txt, 'GetTypeID<\s*type_at<', 'GetTypeID< typename type_at<')
+          if ($fixed -ne $txt) { Set-Content -Path $pf -Value $fixed -NoNewline -Encoding utf8; Write-Host 'PapyrusFunctions.h corrigido (typename)' }
+          else { Write-Host 'AVISO: nao encontrei o padrao a corrigir em PapyrusFunctions.h' }
+
           $dest = Join-Path $dll 'BetterLooting'
           New-Item -ItemType Directory -Force $dest | Out-Null
           Copy-Item "$ws\betterlooting\*" $dest -Recurse -Force
