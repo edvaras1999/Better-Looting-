@@ -25,6 +25,7 @@ int oLang
 int oVisual
 int oAnchorX
 int oAnchorY
+int oSortBy
 int oKeyAll
 int oKeySearch
 
@@ -58,10 +59,10 @@ string Function L(string en, string pt)
 EndFunction
 
 Function BuildTables()
-	tKey = new string[10]
-	tEN = new string[10]
-	tPT = new string[10]
-	tOpt = new int[10]
+	tKey = new string[13]
+	tEN = new string[13]
+	tPT = new string[13]
+	tOpt = new int[13]
 	tKey[0] = "bDisableInCombat"
 	tEN[0] = "Disable in combat"
 	tPT[0] = "Desativar em combate"
@@ -92,6 +93,15 @@ Function BuildTables()
 	tKey[9] = "bShowItemIcons"
 	tEN[9] = "Show item icons"
 	tPT[9] = "Mostrar icones dos itens"
+	tKey[10] = "bSortByCategory"
+	tEN[10] = "Group by category (gold, gems, potions, weapons...)"
+	tPT[10] = "Agrupar por categoria (ouro, gemas, pocoes, armas...)"
+	tKey[11] = "bSortDescending"
+	tEN[11] = "Descending order"
+	tPT[11] = "Ordem descendente"
+	tKey[12] = "bSortWeightlessFirst"
+	tEN[12] = "Weightless items first"
+	tPT[12] = "Itens sem peso primeiro"
 
 	sKey = new string[9]
 	sEN = new string[9]
@@ -180,6 +190,7 @@ Function BuildTables()
 	oVisual = -1
 	oAnchorX = -1
 	oAnchorY = -1
+	oSortBy = -1
 	oKeyAll = -1
 	oKeySearch = -1
 EndFunction
@@ -196,6 +207,17 @@ string Function LangName(int v)
 		return "Portugues"
 	endif
 	return "English"
+EndFunction
+
+string Function SortByName(int v)
+	if v == 1
+		return L("Value", "Valor")
+	elseif v == 2
+		return L("Weight", "Peso")
+	elseif v == 3
+		return L("Value per weight", "Valor por peso")
+	endif
+	return L("Name", "Nome")
 EndFunction
 
 string Function AnchorXName(int v)
@@ -243,6 +265,10 @@ Event OnPageReset(string a_page)
 		oVisual = AddMenuOption(L("Loot window look", "Visual da janela de loot"), VisualName(BetterLootingNative.GetInt("iVisual", 0)))
 		AddHeaderOption(L("Behavior", "Comportamento"))
 		AddToggleRange(0, 5)
+		AddHeaderOption(L("Sorting", "Ordenacao"))
+		AddToggleRange(10, 10)
+		oSortBy = AddMenuOption(L("Sort by", "Ordenar por"), SortByName(BetterLootingNative.GetInt("iSortBy", 0)))
+		AddToggleRange(11, 12)
 	elseif a_page == Pages[1]
 		AddHeaderOption(L("Size and lines", "Tamanho e linhas"))
 		AddSliderRange(0, 3)
@@ -321,6 +347,9 @@ Event OnOptionDefault(int a_option)
 	elseif a_option == oAnchorY
 		BetterLootingNative.SetInt("iAnchorY", 0)
 		SetMenuOptionValue(a_option, AnchorYName(0))
+	elseif a_option == oSortBy
+		BetterLootingNative.SetInt("iSortBy", 0)
+		SetMenuOptionValue(a_option, SortByName(0))
 	elseif a_option == oVisual
 		BetterLootingNative.SetInt("iVisual", 0)
 		BetterLootingNative.ApplyVisual()
@@ -376,6 +405,13 @@ Event OnOptionMenuOpen(int a_option)
 		opts[1] = AnchorYName(1)
 		opts[2] = AnchorYName(2)
 		cur = BetterLootingNative.GetInt("iAnchorY", 0)
+	elseif a_option == oSortBy
+		opts = new string[4]
+		opts[0] = SortByName(0)
+		opts[1] = SortByName(1)
+		opts[2] = SortByName(2)
+		opts[3] = SortByName(3)
+		cur = BetterLootingNative.GetInt("iSortBy", 0)
 	else
 		return
 	endif
@@ -402,6 +438,9 @@ Event OnOptionMenuAccept(int a_option, int a_index)
 	elseif a_option == oAnchorY
 		BetterLootingNative.SetInt("iAnchorY", a_index)
 		SetMenuOptionValue(a_option, AnchorYName(a_index))
+	elseif a_option == oSortBy
+		BetterLootingNative.SetInt("iSortBy", a_index)
+		SetMenuOptionValue(a_option, SortByName(a_index))
 	endif
 EndEvent
 
@@ -435,6 +474,8 @@ Event OnOptionHighlight(int a_option)
 		SetInfoText(L("Where on the screen the window is anchored, horizontally.", "Ponto do ecra onde a janela fica ancorada, na horizontal."))
 	elseif a_option == oAnchorY
 		SetInfoText(L("Where on the screen the window is anchored, vertically.", "Ponto do ecra onde a janela fica ancorada, na vertical."))
+	elseif a_option == oSortBy
+		SetInfoText(L("Order of the items inside each category (or of the whole list if grouping is off). Quest items always come first.", "Ordem dos itens dentro de cada categoria (ou de toda a lista, se o agrupamento estiver desligado). Itens de missao ficam sempre primeiro."))
 	elseif a_option == sOpt[3]
 		SetInfoText(L("Stops the list after this many items. 0 means all items are listed.", "Para a lista neste numero de itens. 0 lista todos os itens."))
 	endif

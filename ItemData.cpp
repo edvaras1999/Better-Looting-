@@ -347,6 +347,119 @@ bool operator<(const ItemData &a, const ItemData &b)
 }
 
 //===================================================================================
+// ordenacao por categorias (ordem do QuickLootIE) e atributos
+//===================================================================================
+
+int ItemData::GetCategory() const
+{
+	const int t = (int)type;
+
+	if (t == kType_MiscGold || t == kType_MiscGoldSack)
+		return 0;												// ouro
+	if (t == kType_MiscGem)
+		return 1;												// gemas
+	if (t == kType_MiscSoulGem || (t >= kType_SoulGemEmpty && t <= kType_SoulGemAzura))
+		return 2;												// gemas de alma
+	if (t == kType_MiscLockPick)
+		return 3;												// lockpicks
+	if (t == kType_MiscIngot)
+		return 4;												// barras
+	if (t == kType_MiscOre)
+		return 5;												// minerio
+	if (t >= kType_DefaultPotion && t <= kType_PotionShock)
+		return 6;												// pocoes e venenos
+	if (t >= kType_DefaultFood && t <= kType_FoodBeer)
+		return 7;												// comida e bebida
+	if (t == kType_BookNote)
+		return 9;												// notas
+	if (t >= kType_DefaultBook && t <= kType_BookMap)
+		return 8;												// livros
+	if (t == kType_DefaultScroll)
+		return 10;												// pergaminhos
+	if (t == kType_WeaponArrow || t == kType_WeaponBolt)
+		return 11;												// flechas e virotes
+	if (t == kType_ArmorAmulet || t == kType_ArmorRing || t == kType_Circlet)
+		return 12;												// joias
+	if (t >= kType_DefaultWeapon && t <= kType_WeaponBolt)
+		return 13;												// armas
+	if (t >= kType_DefaultArmor && t <= kType_ArmorDaedra)
+		return 14;												// armaduras
+	if (t >= kType_ClothingBody && t <= kType_ClothingMask)
+		return 15;												// roupas
+	return 16;													// o resto
+}
+
+
+static int CompareDouble(double a, double b)
+{
+	return (a < b) ? -1 : ((a > b) ? 1 : 0);
+}
+
+
+static double ValuePerWeight(const ItemData &d)
+{
+	const double w = d.GetWeight();
+	const double v = (double)d.GetValue();
+	if (w > 0.0)
+		return v / w;
+	return (v > 0.0) ? 1.0e9 : 0.0;		// sem peso: o melhor possivel
+}
+
+
+bool ItemSortLess(const ItemData &a, const ItemData &b)
+{
+	// itens de missao ficam sempre primeiro
+	if (a.IsQuestItem() != b.IsQuestItem())
+		return a.IsQuestItem();
+
+	// sem categorias: a ordem original do QuickLoot
+	if (!Settings::bSortByCategory)
+		return a < b;
+
+	const int catA = a.GetCategory();
+	const int catB = b.GetCategory();
+	if (catA != catB)
+		return catA < catB;
+
+	if (Settings::bSortWeightlessFirst)
+	{
+		const bool weightlessA = a.GetWeight() <= 0.0;
+		const bool weightlessB = b.GetWeight() <= 0.0;
+		if (weightlessA != weightlessB)
+			return weightlessA;
+	}
+
+	int cmp = 0;
+	switch (Settings::iSortBy)
+	{
+	case 1:
+		cmp = CompareDouble((double)a.GetValue(), (double)b.GetValue());
+		break;
+	case 2:
+		cmp = CompareDouble(a.GetWeight(), b.GetWeight());
+		break;
+	case 3:
+		cmp = CompareDouble(ValuePerWeight(a), ValuePerWeight(b));
+		break;
+	default:
+		cmp = _stricmp(a.GetName(), b.GetName());
+		break;
+	}
+
+	if (Settings::bSortDescending)
+		cmp = -cmp;
+	if (cmp != 0)
+		return cmp < 0;
+
+	// desempate: nome e, no fim, a ordem original (garante uma ordem total)
+	cmp = _stricmp(a.GetName(), b.GetName());
+	if (cmp != 0)
+		return cmp < 0;
+
+	return a < b;
+}
+
+//===================================================================================
 // get type
 //===================================================================================
 

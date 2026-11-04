@@ -191,6 +191,10 @@ struct ItemData
 	SInt32 GetValue() const;
 	double GetWeight() const;
 	const char * GetIcon() const;
+	int GetCategory() const;	// categoria de ordenacao (0 = ouro ... 16 = outros)
 };
 
 bool operator<(const ItemData &a, const ItemData &b);
+
+// ordem da lista de loot (usa as definicoes de ordenacao)
+bool ItemSortLess(const ItemData &a, const ItemData &b);

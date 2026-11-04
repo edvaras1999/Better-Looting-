@@ -4,7 +4,7 @@ Plugin SKSE (1.7.3) para Skyrim LE que junta, num unico plugin, o menu de loot d
 (com o visual do QuickLoot Redesigned), o realce de objetos (Highlight Objects) e a
 sobrevivencia (EatingSleepingDrinking), com os patches de animacao.
 
-Estado: **v0.3** - menu de loot completo, MCM e dois visuais. O plugin parte do codigo do
+Estado: **v0.4** - menu de loot completo, MCM, dois visuais e ordenacao. O plugin parte do codigo do
 QuickLoot 1.1f (LE) e fala o protocolo do `LootMenuIE.swf` do QuickLootIE.
 
 ## Teclas (menu de loot aberto)
@@ -14,6 +14,13 @@ QuickLoot 1.1f (LE) e fala o protocolo do `LootMenuIE.swf` do QuickLootIE.
 - **R**: Procurar, ou seja, abre o contentor normal (um toque por omissao; o tempo configura-se).
 - Com o menu aberto, C e R sao retiradas do jogo: nao fazem o que fariam com o menu fechado.
 - Com o menu fechado, R mantido 2 s liga/desliga o menu de loot (aviso no ecra).
+
+## Ordenacao
+
+Por categoria (ouro, gemas, gemas de alma, lockpicks, barras, minerio, pocoes, comida e bebida, livros,
+notas, pergaminhos, flechas e virotes, joias, armas, armaduras, roupas, resto) e, dentro de cada uma, por
+nome, valor, peso ou valor por peso (ascendente ou descendente; itens sem peso primeiro, se quiser).
+Itens de missao ficam sempre primeiro. Tudo no MCM (pagina General) e no INI.
 
 ## Configuracao
 

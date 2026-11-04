@@ -15,6 +15,10 @@ bool	Settings::bCloseIfEmpty = false;
 bool	Settings::bUseConsole = false;
 bool	Settings::bForceAnsi = false;
 bool	Settings::bDisableLootSingle = false;
+bool	Settings::bSortByCategory = true;
+bool	Settings::bSortDescending = false;
+bool	Settings::bSortWeightlessFirst = false;
+int		Settings::iSortBy = 0;
 bool	Settings::bShowValue = true;
 bool	Settings::bShowWeight = true;
 bool	Settings::bShowValuePerWeight = false;
@@ -60,6 +64,10 @@ namespace
 		{ "bUseConsole",			&Settings::bUseConsole,				true,	0, 0, 1 },
 		{ "bForceAnsi",				&Settings::bForceAnsi,				true,	0, 0, 1 },
 		{ "bDisableLootSingle",		&Settings::bDisableLootSingle,		true,	0, 0, 1 },
+		{ "bSortByCategory",		&Settings::bSortByCategory,			true,	1, 0, 1 },
+		{ "bSortDescending",		&Settings::bSortDescending,			true,	0, 0, 1 },
+		{ "bSortWeightlessFirst",	&Settings::bSortWeightlessFirst,		true,	0, 0, 1 },
+		{ "iSortBy",				&Settings::iSortBy,					false,	0, 0, 3 },
 		{ "bShowValue",				&Settings::bShowValue,				true,	1, 0, 1 },
 		{ "bShowWeight",			&Settings::bShowWeight,				true,	1, 0, 1 },
 		{ "bShowValuePerWeight",	&Settings::bShowValuePerWeight,		true,	0, 0, 1 },

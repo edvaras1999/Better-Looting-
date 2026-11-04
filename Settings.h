@@ -14,6 +14,12 @@ struct Settings
 	static bool	bForceAnsi;
 	static bool	bDisableLootSingle;
 
+	// ordenacao da lista
+	static bool	bSortByCategory;		// agrupa por categoria (ordem do QuickLootIE)
+	static bool	bSortDescending;		// atributo em ordem descendente
+	static bool	bSortWeightlessFirst;	// itens sem peso primeiro, dentro da categoria
+	static int	iSortBy;				// 0 = nome, 1 = valor, 2 = peso, 3 = valor por peso
+
 	// colunas e icones
 	static bool	bShowValue;
 	static bool	bShowWeight;
