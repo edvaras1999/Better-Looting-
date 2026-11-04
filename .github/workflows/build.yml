@@ -24,6 +24,7 @@ jobs:
             'Settings.cpp' = 'betterlooting'; 'Settings.h' = 'betterlooting'; 'Console.cpp' = 'betterlooting'; 'Console.h' = 'betterlooting'
             'UTF8.cpp' = 'betterlooting'; 'BetterLooting.vcxproj' = 'betterlooting'
             'Papyrus.cpp' = 'betterlooting'; 'Papyrus.h' = 'betterlooting'
+            'Highlight.cpp' = 'betterlooting'; 'Highlight.h' = 'betterlooting'
             'BetterLooting.ini' = 'dist\Data\SKSE\Plugins'; 'LootMenuIE.swf' = 'dist\Data\Interface'; 'LootMenuRedesigned.swf' = 'dist\Data\Interface'
             'Quick_Loot_1_1f_Source_Files__for_modders_-73096-1-1f.7z' = 'third_party'
           }
@@ -153,6 +154,7 @@ jobs:
             'Hooks.cpp' = 'betterlooting'; 'Hooks.h' = 'betterlooting'; 'ItemData.cpp' = 'betterlooting'; 'ItemData.h' = 'betterlooting'
             'Settings.cpp' = 'betterlooting'; 'Settings.h' = 'betterlooting'; 'Console.cpp' = 'betterlooting'; 'Console.h' = 'betterlooting'
             'UTF8.cpp' = 'betterlooting'; 'BetterLooting.vcxproj' = 'betterlooting'; 'Papyrus.cpp' = 'betterlooting'; 'Papyrus.h' = 'betterlooting'
+            'Highlight.cpp' = 'betterlooting'; 'Highlight.h' = 'betterlooting'
             'BetterLootingNative.psc' = 'papyrus\src'; 'BetterLootingMCM.psc' = 'papyrus\src'
             'Form.psc' = 'papyrus\stubs'; 'Quest.psc' = 'papyrus\stubs'; 'SKI_ConfigBase.psc' = 'papyrus\stubs'; 'SKI_QuestBase.psc' = 'papyrus\stubs'
             'TESV_Papyrus_Flags.flg' = 'papyrus'
@@ -278,6 +280,7 @@ jobs:
             'Hooks.cpp' = 'betterlooting'; 'Hooks.h' = 'betterlooting'; 'ItemData.cpp' = 'betterlooting'; 'ItemData.h' = 'betterlooting'
             'Settings.cpp' = 'betterlooting'; 'Settings.h' = 'betterlooting'; 'Console.cpp' = 'betterlooting'; 'Console.h' = 'betterlooting'
             'UTF8.cpp' = 'betterlooting'; 'BetterLooting.vcxproj' = 'betterlooting'; 'Papyrus.cpp' = 'betterlooting'; 'Papyrus.h' = 'betterlooting'
+            'Highlight.cpp' = 'betterlooting'; 'Highlight.h' = 'betterlooting'
             'BetterLootingNative.psc' = 'papyrus\src'; 'BetterLootingMCM.psc' = 'papyrus\src'
             'Form.psc' = 'papyrus\stubs'; 'Quest.psc' = 'papyrus\stubs'; 'SKI_ConfigBase.psc' = 'papyrus\stubs'; 'SKI_QuestBase.psc' = 'papyrus\stubs'
             'TESV_Papyrus_Flags.flg' = 'papyrus'
