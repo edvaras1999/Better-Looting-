@@ -26,6 +26,7 @@ int oVisual
 int oAnchorX
 int oAnchorY
 int oSortBy
+int oHLColor
 int oKeyAll
 int oKeySearch
 
@@ -45,10 +46,11 @@ Event OnVersionUpdate(int a_version)
 EndEvent
 
 Function BuildPages()
-	Pages = new string[3]
+	Pages = new string[4]
 	Pages[0] = "General / Geral"
 	Pages[1] = "Window / Janela"
 	Pages[2] = "Keys / Teclas"
+	Pages[3] = "Highlight / Realce"
 EndFunction
 
 string Function L(string en, string pt)
@@ -59,10 +61,10 @@ string Function L(string en, string pt)
 EndFunction
 
 Function BuildTables()
-	tKey = new string[13]
-	tEN = new string[13]
-	tPT = new string[13]
-	tOpt = new int[13]
+	tKey = new string[32]
+	tEN = new string[32]
+	tPT = new string[32]
+	tOpt = new int[32]
 	tKey[0] = "bDisableInCombat"
 	tEN[0] = "Disable in combat"
 	tPT[0] = "Desativar em combate"
@@ -102,15 +104,72 @@ Function BuildTables()
 	tKey[12] = "bSortWeightlessFirst"
 	tEN[12] = "Weightless items first"
 	tPT[12] = "Itens sem peso primeiro"
+	tKey[13] = "bHLEnabled"
+	tEN[13] = "Highlight objects under the crosshair"
+	tPT[13] = "Realcar objetos na mira"
+	tKey[14] = "bHLRedStealable"
+	tEN[14] = "Red highlight for what would be stealing"
+	tPT[14] = "Realce vermelho para o que seria roubo"
+	tKey[15] = "bHLIgnoreUnnamed"
+	tEN[15] = "Ignore objects without a name"
+	tPT[15] = "Ignorar objetos sem nome"
+	tKey[16] = "bHLActivator"
+	tEN[16] = "Activators"
+	tPT[16] = "Ativadores"
+	tKey[17] = "bHLTalkingActivator"
+	tEN[17] = "Talking activators"
+	tPT[17] = "Ativadores falantes"
+	tKey[18] = "bHLContainer"
+	tEN[18] = "Containers"
+	tPT[18] = "Contentores"
+	tKey[19] = "bHLDoor"
+	tEN[19] = "Doors"
+	tPT[19] = "Portas"
+	tKey[20] = "bHLFlora"
+	tEN[20] = "Flora and trees"
+	tPT[20] = "Flora e arvores"
+	tKey[21] = "bHLFurniture"
+	tEN[21] = "Furniture"
+	tPT[21] = "Mobilia"
+	tKey[22] = "bHLArmor"
+	tEN[22] = "Armor and clothes"
+	tPT[22] = "Armaduras e roupas"
+	tKey[23] = "bHLWeapon"
+	tEN[23] = "Weapons"
+	tPT[23] = "Armas"
+	tKey[24] = "bHLAmmo"
+	tEN[24] = "Ammo"
+	tPT[24] = "Municao"
+	tKey[25] = "bHLBook"
+	tEN[25] = "Books"
+	tPT[25] = "Livros"
+	tKey[26] = "bHLIngredient"
+	tEN[26] = "Ingredients"
+	tPT[26] = "Ingredientes"
+	tKey[27] = "bHLKey"
+	tEN[27] = "Keys"
+	tPT[27] = "Chaves"
+	tKey[28] = "bHLMisc"
+	tEN[28] = "Misc items"
+	tPT[28] = "Itens diversos"
+	tKey[29] = "bHLPotion"
+	tEN[29] = "Potions"
+	tPT[29] = "Pocoes"
+	tKey[30] = "bHLScroll"
+	tEN[30] = "Scrolls"
+	tPT[30] = "Pergaminhos"
+	tKey[31] = "bHLSoulGem"
+	tEN[31] = "Soul gems"
+	tPT[31] = "Gemas de alma"
 
-	sKey = new string[9]
-	sEN = new string[9]
-	sPT = new string[9]
-	sMin = new float[9]
-	sMax = new float[9]
-	sStep = new float[9]
-	sFmt = new string[9]
-	sOpt = new int[9]
+	sKey = new string[10]
+	sEN = new string[10]
+	sPT = new string[10]
+	sMin = new float[10]
+	sMax = new float[10]
+	sStep = new float[10]
+	sFmt = new string[10]
+	sOpt = new int[10]
 	sKey[0] = "iScale"
 	sEN[0] = "Window scale"
 	sPT[0] = "Escala da janela"
@@ -174,6 +233,13 @@ Function BuildTables()
 	sMax[8] = 1000.0
 	sStep[8] = 50.0
 	sFmt[8] = "{0} ms"
+	sKey[9] = "iHLCrosshairMs"
+	sEN[9] = "Crosshair highlight duration"
+	sPT[9] = "Duracao do realce na mira"
+	sMin[9] = 100.0
+	sMax[9] = 10000.0
+	sStep[9] = 100.0
+	sFmt[9] = "{0} ms"
 
 	; ids de opcoes por preencher: -1 (o id 0 e valido, por isso nao serve de "vazio")
 	int n = 0
@@ -191,6 +257,7 @@ Function BuildTables()
 	oAnchorX = -1
 	oAnchorY = -1
 	oSortBy = -1
+	oHLColor = -1
 	oKeyAll = -1
 	oKeySearch = -1
 EndFunction
@@ -207,6 +274,19 @@ string Function LangName(int v)
 		return "Portugues"
 	endif
 	return "English"
+EndFunction
+
+string Function ColorName(int v)
+	if v == 1
+		return L("White", "Branco")
+	elseif v == 2
+		return L("Green", "Verde")
+	elseif v == 3
+		return L("Cyan", "Ciano")
+	elseif v == 4
+		return L("Red", "Vermelho")
+	endif
+	return L("Gold", "Dourado")
 EndFunction
 
 string Function SortByName(int v)
@@ -280,6 +360,14 @@ Event OnPageReset(string a_page)
 		AddSliderRange(6, 7)
 		AddHeaderOption(L("Columns and icons", "Colunas e icones"))
 		AddToggleRange(6, 9)
+	elseif a_page == Pages[3]
+		AddHeaderOption(L("Crosshair highlight", "Realce na mira"))
+		AddToggleRange(13, 13)
+		oHLColor = AddMenuOption(L("Highlight color", "Cor do realce"), ColorName(BetterLootingNative.GetInt("iHLColor", 0)))
+		AddToggleRange(14, 15)
+		sOpt[9] = AddSliderOption(L(sEN[9], sPT[9]), BetterLootingNative.GetInt(sKey[9], 800) as float, sFmt[9])
+		AddHeaderOption(L("Object types", "Tipos de objeto"))
+		AddToggleRange(16, 31)
 	elseif a_page == Pages[2]
 		AddHeaderOption(L("Keys (loot menu open)", "Teclas (menu de loot aberto)"))
 		oKeyAll = AddKeyMapOption(L("Take all", "Pegar tudo"), BetterLootingNative.GetInt("iKeyTakeAll", 46))
@@ -350,6 +438,9 @@ Event OnOptionDefault(int a_option)
 	elseif a_option == oSortBy
 		BetterLootingNative.SetInt("iSortBy", 0)
 		SetMenuOptionValue(a_option, SortByName(0))
+	elseif a_option == oHLColor
+		BetterLootingNative.SetInt("iHLColor", 0)
+		SetMenuOptionValue(a_option, ColorName(0))
 	elseif a_option == oVisual
 		BetterLootingNative.SetInt("iVisual", 0)
 		BetterLootingNative.ApplyVisual()
@@ -405,6 +496,14 @@ Event OnOptionMenuOpen(int a_option)
 		opts[1] = AnchorYName(1)
 		opts[2] = AnchorYName(2)
 		cur = BetterLootingNative.GetInt("iAnchorY", 0)
+	elseif a_option == oHLColor
+		opts = new string[5]
+		opts[0] = ColorName(0)
+		opts[1] = ColorName(1)
+		opts[2] = ColorName(2)
+		opts[3] = ColorName(3)
+		opts[4] = ColorName(4)
+		cur = BetterLootingNative.GetInt("iHLColor", 0)
 	elseif a_option == oSortBy
 		opts = new string[4]
 		opts[0] = SortByName(0)
@@ -438,6 +537,9 @@ Event OnOptionMenuAccept(int a_option, int a_index)
 	elseif a_option == oAnchorY
 		BetterLootingNative.SetInt("iAnchorY", a_index)
 		SetMenuOptionValue(a_option, AnchorYName(a_index))
+	elseif a_option == oHLColor
+		BetterLootingNative.SetInt("iHLColor", a_index)
+		SetMenuOptionValue(a_option, ColorName(a_index))
 	elseif a_option == oSortBy
 		BetterLootingNative.SetInt("iSortBy", a_index)
 		SetMenuOptionValue(a_option, SortByName(a_index))
@@ -474,6 +576,8 @@ Event OnOptionHighlight(int a_option)
 		SetInfoText(L("Where on the screen the window is anchored, horizontally.", "Ponto do ecra onde a janela fica ancorada, na horizontal."))
 	elseif a_option == oAnchorY
 		SetInfoText(L("Where on the screen the window is anchored, vertically.", "Ponto do ecra onde a janela fica ancorada, na vertical."))
+	elseif a_option == oHLColor
+		SetInfoText(L("Color of the glow on the object you look at. What would be stealing uses red if that option is on.", "Cor do brilho no objeto para que olhas. O que seria roubo usa vermelho, se essa opcao estiver ligada."))
 	elseif a_option == oSortBy
 		SetInfoText(L("Order of the items inside each category (or of the whole list if grouping is off). Quest items always come first.", "Ordem dos itens dentro de cada categoria (ou de toda a lista, se o agrupamento estiver desligado). Itens de missao ficam sempre primeiro."))
 	elseif a_option == sOpt[3]

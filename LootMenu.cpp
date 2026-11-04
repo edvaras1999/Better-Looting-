@@ -1388,9 +1388,20 @@ void LootMenu::UI_Open(GFxMovieView *a_view)
 	SetGFxString(a_view, title, m_targetRef->GetReferenceName());
 	a_view->SetVariable("_root.lootMenu.title.text", title);
 
-	// o peso do jogador ainda nao e mostrado na v0.1
-	GFxValue noText("");
-	a_view->SetVariable("_root.lootMenu.weight.text", noText);
+	// peso transportado / capacidade de carga do jogador
+	{
+		char weightText[48];
+		const int current = (int)g_thePlayer->GetCurrent(EffectSetting::Properties::kActorValue_InventoryWeight);
+		const int limit = (int)g_thePlayer->GetCurrent(EffectSetting::Properties::kActorValue_CarryWeight);
+		sprintf_s(weightText, "%d / %d", current, limit);
+
+		GFxValue weightValue;
+		SetGFxString(a_view, weightValue, weightText);
+		a_view->SetVariable("_root.lootMenu.weight.text", weightValue);
+
+		GFxValue weightVisible(true);
+		a_view->SetVariable("_root.lootMenu.weight._visible", weightVisible);
+	}
 
 	// itens
 	GFxValue items;

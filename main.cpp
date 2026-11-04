@@ -7,6 +7,7 @@
 #include "Console.h"
 #include "Hooks.h"
 #include "Papyrus.h"
+#include "Highlight.h"
 
 //========================================================
 // skse plugin
@@ -28,7 +29,7 @@ public:
 		}
 
 		SetName("BetterLooting");
-		SetVersion(3);
+		SetVersion(5);
 
 		return true;
 	}
@@ -50,6 +51,8 @@ public:
 	virtual void OnModLoaded() override
 	{
 		Settings::Load();
+
+		Highlight::Init();
 
 		if (LootMenu::Install())
 		{

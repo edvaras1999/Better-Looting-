@@ -39,6 +39,28 @@ int		Settings::iKeyTakeAll = 46;		// C
 int		Settings::iKeySearch = 19;		// R
 int		Settings::iSearchHoldMs = 0;	// 0 = um toque
 
+bool	Settings::bHLEnabled = true;
+bool	Settings::bHLRedStealable = true;
+bool	Settings::bHLIgnoreUnnamed = true;
+int		Settings::iHLColor = 0;
+int		Settings::iHLCrosshairMs = 800;
+bool	Settings::bHLActivator = true;
+bool	Settings::bHLTalkingActivator = true;
+bool	Settings::bHLContainer = true;
+bool	Settings::bHLDoor = true;
+bool	Settings::bHLFlora = true;
+bool	Settings::bHLFurniture = true;
+bool	Settings::bHLArmor = true;
+bool	Settings::bHLWeapon = true;
+bool	Settings::bHLAmmo = true;
+bool	Settings::bHLBook = true;
+bool	Settings::bHLIngredient = true;
+bool	Settings::bHLKey = true;
+bool	Settings::bHLMisc = true;
+bool	Settings::bHLPotion = true;
+bool	Settings::bHLScroll = true;
+bool	Settings::bHLSoulGem = true;
+
 int		Settings::iVisual = 0;			// Redesigned
 int		Settings::iLanguage = 0;		// English
 
@@ -87,6 +109,28 @@ namespace
 		{ "iKeyTakeAll",			&Settings::iKeyTakeAll,				false,	46,		1,		255 },
 		{ "iKeySearch",				&Settings::iKeySearch,				false,	19,		1,		255 },
 		{ "iSearchHoldMs",			&Settings::iSearchHoldMs,			false,	0,		0,		2000 },
+
+		{ "bHLEnabled",				&Settings::bHLEnabled,				true,	1, 0, 1 },
+		{ "bHLRedStealable",		&Settings::bHLRedStealable,			true,	1, 0, 1 },
+		{ "bHLIgnoreUnnamed",		&Settings::bHLIgnoreUnnamed,			true,	1, 0, 1 },
+		{ "iHLColor",				&Settings::iHLColor,				false,	0, 0, 4 },
+		{ "iHLCrosshairMs",			&Settings::iHLCrosshairMs,			false,	800, 100, 10000 },
+		{ "bHLActivator",			&Settings::bHLActivator,			true,	1, 0, 1 },
+		{ "bHLTalkingActivator",			&Settings::bHLTalkingActivator,			true,	1, 0, 1 },
+		{ "bHLContainer",			&Settings::bHLContainer,			true,	1, 0, 1 },
+		{ "bHLDoor",			&Settings::bHLDoor,			true,	1, 0, 1 },
+		{ "bHLFlora",			&Settings::bHLFlora,			true,	1, 0, 1 },
+		{ "bHLFurniture",			&Settings::bHLFurniture,			true,	1, 0, 1 },
+		{ "bHLArmor",			&Settings::bHLArmor,			true,	1, 0, 1 },
+		{ "bHLWeapon",			&Settings::bHLWeapon,			true,	1, 0, 1 },
+		{ "bHLAmmo",			&Settings::bHLAmmo,			true,	1, 0, 1 },
+		{ "bHLBook",			&Settings::bHLBook,			true,	1, 0, 1 },
+		{ "bHLIngredient",			&Settings::bHLIngredient,			true,	1, 0, 1 },
+		{ "bHLKey",			&Settings::bHLKey,			true,	1, 0, 1 },
+		{ "bHLMisc",			&Settings::bHLMisc,			true,	1, 0, 1 },
+		{ "bHLPotion",			&Settings::bHLPotion,			true,	1, 0, 1 },
+		{ "bHLScroll",			&Settings::bHLScroll,			true,	1, 0, 1 },
+		{ "bHLSoulGem",			&Settings::bHLSoulGem,			true,	1, 0, 1 },
 
 		{ "iVisual",				&Settings::iVisual,					false,	0,		0,		1 },
 		{ "iLanguage",				&Settings::iLanguage,				false,	0,		0,		1 },

@@ -4,7 +4,7 @@ Plugin SKSE (1.7.3) para Skyrim LE que junta, num unico plugin, o menu de loot d
 (com o visual do QuickLoot Redesigned), o realce de objetos (Highlight Objects) e a
 sobrevivencia (EatingSleepingDrinking), com os patches de animacao.
 
-Estado: **v0.4** - menu de loot completo, MCM, dois visuais e ordenacao. O plugin parte do codigo do
+Estado: **v0.5** - menu de loot completo (com peso do jogador), MCM, dois visuais, ordenacao e realce de objetos na mira. O plugin parte do codigo do
 QuickLoot 1.1f (LE) e fala o protocolo do `LootMenuIE.swf` do QuickLootIE.
 
 ## Teclas (menu de loot aberto)
@@ -22,9 +22,18 @@ notas, pergaminhos, flechas e virotes, joias, armas, armaduras, roupas, resto) e
 nome, valor, peso ou valor por peso (ascendente ou descendente; itens sem peso primeiro, se quiser).
 Itens de missao ficam sempre primeiro. Tudo no MCM (pagina General) e no INI.
 
+## Realce de objetos (Highlight)
+
+O objeto para que olhas ganha um brilho (efeito de shader do jogo, aplicado pela DLL sem scripts Papyrus).
+Cor e duracao configuraveis; o que seria roubo fica a vermelho; filtro por tipo de objeto (ativadores,
+contentores, portas, flora, mobilia, armaduras, armas, municao, livros, ingredientes, chaves, misc, pocoes,
+pergaminhos, gemas de alma). Os shaders vivem no `BetterLooting.esp` (gerado por `tools/make_esp.py` a partir
+dos dados do Highlight Objects EdgeLight Edition). O contorno em D3D11 do original nao existe no LE.
+Proximo: varrimento por raio com tecla e cadaveres lootaveis.
+
 ## Configuracao
 
-- **MCM** (SkyUI): "Better Looting", com paginas General/Geral, Window/Janela e Keys/Teclas, em
+- **MCM** (SkyUI): "Better Looting", com paginas General/Geral, Window/Janela, Keys/Teclas e Highlight/Realce, em
   English e Portugues. Todas as opcoes gravam no `BetterLooting.ini`.
 - **Visual**: Redesigned (padrao) ou QuickLootIE original. A troca aplica-se na proxima vez que o
   menu de loot abre (o menu e recriado).

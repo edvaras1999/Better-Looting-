@@ -48,6 +48,29 @@ struct Settings
 	// idioma do MCM: 0 = English, 1 = Portugues
 	static int	iLanguage;
 
+	// realce de objetos (Highlight)
+	static bool	bHLEnabled;
+	static bool	bHLRedStealable;	// o que seria roubo fica a vermelho
+	static bool	bHLIgnoreUnnamed;
+	static int	iHLColor;			// 0 dourado, 1 branco, 2 verde, 3 ciano, 4 vermelho
+	static int	iHLCrosshairMs;		// duracao do realce na mira
+	static bool	bHLActivator;
+	static bool	bHLTalkingActivator;
+	static bool	bHLContainer;
+	static bool	bHLDoor;
+	static bool	bHLFlora;
+	static bool	bHLFurniture;
+	static bool	bHLArmor;
+	static bool	bHLWeapon;
+	static bool	bHLAmmo;
+	static bool	bHLBook;
+	static bool	bHLIngredient;
+	static bool	bHLKey;
+	static bool	bHLMisc;
+	static bool	bHLPotion;
+	static bool	bHLScroll;
+	static bool	bHLSoulGem;
+
 	static bool Get(const char *name, int &out);			// valor atual
 	static bool GetDefault(const char *name, int &out);		// valor por omissao
 	static bool Set(const char *name, int val);				// so em memoria (consola)
