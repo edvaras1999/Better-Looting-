@@ -1,0 +1,339 @@
+name: Build BetterLooting (DLL + scripts + pacote de instalacao)
+
+# Corre a cada alteracao enviada ao repositorio e tambem em "Run workflow" na aba Actions.
+# No fim, baixe o artefacto "BetterLooting-instalacao" (zip pronto para instalar com o MO2).
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main, master ]
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Baixar o conteudo do repositorio
+        uses: actions/checkout@v4
+
+      - name: Organizar os ficheiros em pastas (caso tenham sido enviados soltos)
+        shell: pwsh
+        run: |
+          $ws = $env:GITHUB_WORKSPACE
+          $map = [ordered]@{
+            'main.cpp' = 'betterlooting'; 'LootMenu.cpp' = 'betterlooting'; 'LootMenu.h' = 'betterlooting'
+            'Hooks.cpp' = 'betterlooting'; 'Hooks.h' = 'betterlooting'; 'ItemData.cpp' = 'betterlooting'; 'ItemData.h' = 'betterlooting'
+            'Settings.cpp' = 'betterlooting'; 'Settings.h' = 'betterlooting'; 'Console.cpp' = 'betterlooting'; 'Console.h' = 'betterlooting'
+            'UTF8.cpp' = 'betterlooting'; 'BetterLooting.vcxproj' = 'betterlooting'
+            'Papyrus.cpp' = 'betterlooting'; 'Papyrus.h' = 'betterlooting'
+            'BetterLooting.ini' = 'dist\Data\SKSE\Plugins'; 'LootMenuIE.swf' = 'dist\Data\Interface'; 'LootMenuRedesigned.swf' = 'dist\Data\Interface'
+            'Quick_Loot_1_1f_Source_Files__for_modders_-73096-1-1f.7z' = 'third_party'
+          }
+          foreach ($name in $map.Keys) {
+            $src = Join-Path $ws $name
+            if (Test-Path $src -PathType Leaf) {
+              $dir = Join-Path $ws $map[$name]
+              New-Item -ItemType Directory -Force $dir | Out-Null
+              Move-Item $src (Join-Path $dir $name) -Force
+              Write-Host "Movido para a pasta certa: $name -> $($map[$name])"
+            }
+          }
+          # O arquivo da libSkyrim pode ter outro nome (o GitHub troca espacos e parenteses): qualquer .7z com "quick" e "loot" no nome serve.
+          foreach ($f in Get-ChildItem $ws -File -Filter '*.7z' | Where-Object { $_.Name -match '(?i)quick.?loot' }) {
+            $dir = Join-Path $ws 'third_party'
+            New-Item -ItemType Directory -Force $dir | Out-Null
+            Move-Item $f.FullName (Join-Path $dir $f.Name) -Force
+            Write-Host "Movido para third_party: $($f.Name)"
+          }
+
+      - name: Preparar o MSBuild
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Extrair a libSkyrim (codigo-fonte do QuickLoot 1.1f)
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $ws = $env:GITHUB_WORKSPACE
+          # Procura o .7z da libSkyrim: primeiro em third_party, depois em qualquer pasta do repositorio.
+          $archive = Get-ChildItem (Join-Path $ws 'third_party') -Filter '*.7z' -ErrorAction SilentlyContinue | Select-Object -First 1
+          if (-not $archive) {
+            $archive = Get-ChildItem $ws -Recurse -File -Filter '*.7z' -ErrorAction SilentlyContinue |
+              Where-Object { $_.FullName -notmatch '\\ql_src\\' } |
+              Sort-Object { if ($_.Name -match '(?i)quick.?loot') { 0 } else { 1 } } | Select-Object -First 1
+          }
+          if (-not $archive) {
+            Write-Host 'Ficheiros no repositorio (raiz e third_party):'
+            Get-ChildItem $ws -File | ForEach-Object { '  ' + $_.Name }
+            Get-ChildItem (Join-Path $ws 'third_party') -ErrorAction SilentlyContinue | ForEach-Object { '  third_party\' + $_.Name }
+            throw 'Nao encontrei nenhum ficheiro .7z no repositorio. Faca upload do arquivo do QuickLoot 1.1f (Source Files for modders).'
+          }
+          Write-Host "A usar: $($archive.FullName) ($($archive.Length) bytes)"
+          & "C:\Program Files\7-Zip\7z.exe" x $archive.FullName "-o$ws\ql_src" -y | Out-Null
+          if ($LASTEXITCODE -ne 0) { throw "O 7-Zip nao conseguiu abrir o arquivo (codigo $LASTEXITCODE)." }
+          $skseProj = Get-ChildItem "$ws\ql_src" -Recurse -Filter 'SKSE.vcxproj' | Select-Object -First 1
+          if (-not $skseProj) { throw 'Nao encontrei SKSE.vcxproj dentro do arquivo.' }
+          $dll = $skseProj.Directory.Parent.FullName
+          Write-Host "Raiz da libSkyrim: $dll"
+          Get-ChildItem $dll -Directory | ForEach-Object { '  ' + $_.Name }
+          "LIBSKYRIM_DLL=$dll" | Out-File -Append -Encoding utf8 $env:GITHUB_ENV
+
+      - name: Montar o projeto dentro da arvore da libSkyrim
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $ws = $env:GITHUB_WORKSPACE
+          $dll = $env:LIBSKYRIM_DLL
+          # Os projetos antigos pedem ToolsVersion 14.0; o MSBuild atual usa "Current".
+          foreach ($p in Get-ChildItem $dll -Recurse -Filter '*.vcxproj') {
+            $txt = Get-Content -Raw $p.FullName
+            $new = $txt -replace 'ToolsVersion="[0-9.]+"', 'ToolsVersion="Current"'
+            if ($new -ne $txt) { Set-Content -Path $p.FullName -Value $new -Encoding utf8; Write-Host "ToolsVersion ajustado: $($p.Name)" }
+          }
+          $dest = Join-Path $dll 'BetterLooting'
+          New-Item -ItemType Directory -Force $dest | Out-Null
+          Copy-Item "$ws\betterlooting\*" $dest -Recurse -Force
+          Get-ChildItem $dest | Format-Table Name, Length
+
+      - name: Compilar (Release, 32 bits)
+        shell: pwsh
+        run: |
+          $dll = $env:LIBSKYRIM_DLL
+          $log = Join-Path $env:GITHUB_WORKSPACE 'build.log'
+          $opts = @('/m', '/p:Configuration=Release', '/p:Platform=Win32', '/p:PlatformToolset=v143',
+                    '/p:WindowsTargetPlatformVersion=10.0', "/p:SolutionDir=$dll\", '/v:minimal')
+          '=== BetterLooting (com SKSE.lib e Skyrim.lib da libSkyrim) ===' | Out-File $log
+          msbuild "$dll\BetterLooting\BetterLooting.vcxproj" @opts 2>&1 | Tee-Object -FilePath $log -Append
+          if ($LASTEXITCODE -ne 0) {
+            Write-Host '=== PRIMEIROS ERROS (copie daqui) ==='
+            Select-String -Path $log -Pattern ' error ' | Select-Object -First 40 | ForEach-Object { $_.Line.Trim() }
+            throw "A compilacao falhou (codigo $LASTEXITCODE). Veja o build.log."
+          }
+
+      - name: Reunir o resultado
+        if: always()
+        shell: pwsh
+        run: |
+          $out = Join-Path $env:GITHUB_WORKSPACE 'out'
+          New-Item -ItemType Directory -Force $out | Out-Null
+          if ($env:LIBSKYRIM_DLL) {
+            Get-ChildItem $env:LIBSKYRIM_DLL -Recurse -Filter BetterLooting.dll -ErrorAction SilentlyContinue |
+              Copy-Item -Destination $out
+          }
+          $log = Join-Path $env:GITHUB_WORKSPACE 'build.log'
+          if (Test-Path $log) { Copy-Item $log $out }
+          "Passo concluido em $(Get-Date -Format s)" | Out-File (Join-Path $out 'info.txt')
+          Get-ChildItem $out | Format-Table Name, Length
+
+      - name: Guardar o resultado para download
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dll
+          path: out
+          if-no-files-found: warn
+
+  papyrus:
+    runs-on: windows-latest
+    steps:
+      - name: Baixar o repositorio
+        uses: actions/checkout@v4
+
+      - name: Organizar os ficheiros em pastas (caso tenham sido enviados soltos)
+        shell: pwsh
+        run: |
+          $ws = $env:GITHUB_WORKSPACE
+          $map = [ordered]@{
+            'main.cpp' = 'betterlooting'; 'LootMenu.cpp' = 'betterlooting'; 'LootMenu.h' = 'betterlooting'
+            'Hooks.cpp' = 'betterlooting'; 'Hooks.h' = 'betterlooting'; 'ItemData.cpp' = 'betterlooting'; 'ItemData.h' = 'betterlooting'
+            'Settings.cpp' = 'betterlooting'; 'Settings.h' = 'betterlooting'; 'Console.cpp' = 'betterlooting'; 'Console.h' = 'betterlooting'
+            'UTF8.cpp' = 'betterlooting'; 'BetterLooting.vcxproj' = 'betterlooting'; 'Papyrus.cpp' = 'betterlooting'; 'Papyrus.h' = 'betterlooting'
+            'BetterLootingNative.psc' = 'papyrus\src'; 'BetterLootingMCM.psc' = 'papyrus\src'
+            'Form.psc' = 'papyrus\stubs'; 'Quest.psc' = 'papyrus\stubs'; 'SKI_ConfigBase.psc' = 'papyrus\stubs'; 'SKI_QuestBase.psc' = 'papyrus\stubs'
+            'TESV_Papyrus_Flags.flg' = 'papyrus'
+            'BetterLooting.ini' = 'dist\Data\SKSE\Plugins'; 'LootMenuIE.swf' = 'dist\Data\Interface'; 'LootMenuRedesigned.swf' = 'dist\Data\Interface'
+            'BetterLooting.esp' = 'dist\Data'; 'BetterLooting.seq' = 'dist\Data\SEQ'
+            'make_esp.py' = 'tools'
+          }
+          foreach ($name in $map.Keys) {
+            $src = Join-Path $ws $name
+            if (Test-Path $src -PathType Leaf) {
+              $dir = Join-Path $ws $map[$name]
+              New-Item -ItemType Directory -Force $dir | Out-Null
+              Move-Item $src (Join-Path $dir $name) -Force
+              Write-Host "Movido para a pasta certa: $name -> $($map[$name])"
+            }
+          }
+
+      - name: Obter o compilador Caprica
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $ws = $env:GITHUB_WORKSPACE
+          $headers = @{ 'User-Agent' = 'betterlooting-build'; 'Authorization' = "Bearer $env:GH_TOKEN"; 'Accept' = 'application/vnd.github+json' }
+          $repos = @('Orvid/Caprica', 'russo-2025/caprica')
+          $picked = $null
+          foreach ($repo in $repos) {
+            Write-Host "=== Releases de $repo ==="
+            try { $rels = Invoke-RestMethod -Uri "https://api.github.com/repos/$repo/releases" -Headers $headers }
+            catch { Write-Host "Falhou: $($_.Exception.Message)"; continue }
+            foreach ($r in $rels) {
+              foreach ($a in $r.assets) {
+                Write-Host ("  {0} -> {1}" -f $r.tag_name, $a.name)
+                if (-not $picked -and $a.name -match '(?i)\.(zip|7z)$' -and $a.name -notmatch '(?i)source|linux|mac') { $picked = $a }
+              }
+            }
+            if ($picked) { break }
+          }
+          if (-not $picked) { throw 'Nao encontrei um pacote do Caprica nas releases. Veja a lista acima e me envie este log.' }
+          Write-Host "Escolhido: $($picked.name)"
+          $pkg = Join-Path $ws $picked.name
+          Invoke-WebRequest -Uri $picked.browser_download_url -OutFile $pkg -Headers @{ 'User-Agent' = 'betterlooting-build' }
+          $dest = Join-Path $ws 'caprica'
+          New-Item -ItemType Directory -Force $dest | Out-Null
+          if ($pkg -match '(?i)\.zip$') { Expand-Archive -Path $pkg -DestinationPath $dest -Force }
+          else { & "C:\Program Files\7-Zip\7z.exe" x $pkg "-o$dest" -y | Out-Null }
+          $exe = Get-ChildItem $dest -Recurse -Filter 'Caprica.exe' | Select-Object -First 1
+          if (-not $exe) { throw 'O pacote nao tem Caprica.exe.' }
+          Write-Host "Caprica: $($exe.FullName)"
+          "CAPRICA=$($exe.FullName)" | Out-File -Append -Encoding utf8 $env:GITHUB_ENV
+
+      - name: Compilar os scripts
+        shell: pwsh
+        run: |
+          $ws = $env:GITHUB_WORKSPACE
+          $log = Join-Path $ws 'papyrus-build.log'
+          $out = Join-Path $ws 'out'
+          New-Item -ItemType Directory -Force $out | Out-Null
+          Set-Location $ws
+
+          # Caminhos absolutos: assim o Caprica nao mistura os nossos scripts com a pasta do repositorio.
+          $stubs = Join-Path $ws 'papyrus\stubs'
+          $src   = Join-Path $ws 'papyrus\src'
+          $flags = Join-Path $ws 'papyrus\TESV_Papyrus_Flags.flg'
+          $files = @((Join-Path $src 'BetterLootingNative.psc'), (Join-Path $src 'BetterLootingMCM.psc'))
+
+          '=== inicio ===' | Out-File $log
+
+          $tries = New-Object System.Collections.ArrayList
+          [void]$tries.Add(@('--game', 'skyrim', '--flags', $flags, '--ignorecwd', '--import', $stubs, '--import', $src, '--output', $out) + $files)
+          [void]$tries.Add(@('--game', 'skyrim', '--flags', $flags, '--import', $stubs, '--import', $src, '--output', $out) + $files)
+          [void]$tries.Add(@('--game', 'skyrim', '--flags', $flags, '--ignorecwd', '--import', "$stubs;$src", '--output', $out) + $files)
+
+          $ok = $false
+          $n = 0
+          foreach ($t in $tries) {
+            $n++
+            "=== tentativa $n : $($t -join ' ') ===" | Out-File $log -Append
+            Get-ChildItem $out -ErrorAction SilentlyContinue | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
+            & $env:CAPRICA @t 2>&1 | Tee-Object -FilePath $log -Append
+            $code = $LASTEXITCODE
+            $native = Get-ChildItem $out -Recurse -Filter 'BetterLootingNative.pex' -ErrorAction SilentlyContinue | Select-Object -First 1
+            $mcm = Get-ChildItem $out -Recurse -Filter 'BetterLootingMCM.pex' -ErrorAction SilentlyContinue | Select-Object -First 1
+            "codigo de saida: $code ; Native.pex: $([bool]$native) ; MCM.pex: $([bool]$mcm)" | Tee-Object -FilePath $log -Append
+            if ($code -eq 0 -and $native -and $mcm) {
+              # Poe os .pex na raiz da pasta out (o Caprica pode cria-los em subpastas).
+              foreach ($f in @($native, $mcm)) {
+                $dst = Join-Path $out $f.Name
+                if ($f.FullName -ne $dst) { Copy-Item $f.FullName $dst -Force }
+              }
+              $ok = $true
+              break
+            }
+          }
+          if (-not $ok) { Write-Host '=== TODAS AS TENTATIVAS FALHARAM (veja o artefacto papyrus) ==='; exit 1 }
+          Write-Host 'Compilou.'
+          Get-ChildItem $out -Recurse | Format-Table FullName, Length
+
+      - name: Guardar o resultado
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: papyrus
+          path: |
+            out
+            papyrus-build.log
+          if-no-files-found: warn
+
+  package:
+    needs: [build, papyrus]
+    runs-on: windows-latest
+    steps:
+      - name: Baixar o repositorio
+        uses: actions/checkout@v4
+
+      - name: Organizar os ficheiros em pastas (caso tenham sido enviados soltos)
+        shell: pwsh
+        run: |
+          $ws = $env:GITHUB_WORKSPACE
+          $map = [ordered]@{
+            'main.cpp' = 'betterlooting'; 'LootMenu.cpp' = 'betterlooting'; 'LootMenu.h' = 'betterlooting'
+            'Hooks.cpp' = 'betterlooting'; 'Hooks.h' = 'betterlooting'; 'ItemData.cpp' = 'betterlooting'; 'ItemData.h' = 'betterlooting'
+            'Settings.cpp' = 'betterlooting'; 'Settings.h' = 'betterlooting'; 'Console.cpp' = 'betterlooting'; 'Console.h' = 'betterlooting'
+            'UTF8.cpp' = 'betterlooting'; 'BetterLooting.vcxproj' = 'betterlooting'; 'Papyrus.cpp' = 'betterlooting'; 'Papyrus.h' = 'betterlooting'
+            'BetterLootingNative.psc' = 'papyrus\src'; 'BetterLootingMCM.psc' = 'papyrus\src'
+            'Form.psc' = 'papyrus\stubs'; 'Quest.psc' = 'papyrus\stubs'; 'SKI_ConfigBase.psc' = 'papyrus\stubs'; 'SKI_QuestBase.psc' = 'papyrus\stubs'
+            'TESV_Papyrus_Flags.flg' = 'papyrus'
+            'BetterLooting.ini' = 'dist\Data\SKSE\Plugins'; 'LootMenuIE.swf' = 'dist\Data\Interface'; 'LootMenuRedesigned.swf' = 'dist\Data\Interface'
+            'BetterLooting.esp' = 'dist\Data'; 'BetterLooting.seq' = 'dist\Data\SEQ'
+            'make_esp.py' = 'tools'
+          }
+          foreach ($name in $map.Keys) {
+            $src = Join-Path $ws $name
+            if (Test-Path $src -PathType Leaf) {
+              $dir = Join-Path $ws $map[$name]
+              New-Item -ItemType Directory -Force $dir | Out-Null
+              Move-Item $src (Join-Path $dir $name) -Force
+              Write-Host "Movido para a pasta certa: $name -> $($map[$name])"
+            }
+          }
+
+      - name: Baixar a DLL
+        uses: actions/download-artifact@v4
+        with:
+          name: dll
+          path: dl/dll
+
+      - name: Baixar os scripts compilados
+        uses: actions/download-artifact@v4
+        with:
+          name: papyrus
+          path: dl/papyrus
+
+      - name: Montar o pacote de instalacao
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $ws = $env:GITHUB_WORKSPACE
+          $pkg = Join-Path $ws 'pkg'
+          $data = Join-Path $pkg 'Data'
+          $plug = Join-Path $data 'SKSE\Plugins'
+          $iface = Join-Path $data 'Interface'
+          $scripts = Join-Path $data 'Scripts'
+          $seq = Join-Path $data 'SEQ'
+          New-Item -ItemType Directory -Force $plug, $iface, $scripts, $seq | Out-Null
+
+          $dll = Get-ChildItem (Join-Path $ws 'dl\dll') -Recurse -Filter 'BetterLooting.dll' | Select-Object -First 1
+          if (-not $dll) { throw 'Nao encontrei a BetterLooting.dll.' }
+          Copy-Item $dll.FullName $plug
+
+          foreach ($pex in @('BetterLootingNative.pex', 'BetterLootingMCM.pex')) {
+            $f = Get-ChildItem (Join-Path $ws 'dl\papyrus') -Recurse -Filter $pex | Select-Object -First 1
+            if (-not $f) { throw "Nao encontrei $pex." }
+            Copy-Item $f.FullName $scripts
+          }
+
+          Copy-Item (Join-Path $ws 'dist\Data\SKSE\Plugins\BetterLooting.ini') $plug
+          Copy-Item (Join-Path $ws 'dist\Data\Interface\LootMenuIE.swf') $iface
+          Copy-Item (Join-Path $ws 'dist\Data\Interface\LootMenuRedesigned.swf') $iface
+          Copy-Item (Join-Path $ws 'dist\Data\BetterLooting.esp') $data
+          Copy-Item (Join-Path $ws 'dist\Data\SEQ\BetterLooting.seq') $seq
+
+          Set-Content -Path (Join-Path $pkg 'LEIA-ME.txt') -Value 'Better Looting: precisa de SKSE e SkyUI. Instale este pacote (inclui o BetterLooting.esp, que deve ficar ativo) e DESATIVE o QuickLoot 1.1f (QuickLoot.dll, QuickLoot.ini e LootMenu.swf), senao os dois competem pelo loot. As opcoes estao no MCM (Better Looting) e no BetterLooting.ini. No log do SKSE (BetterLooting.log) confirme a linha "nivel de funcoes = 6" e "Funcoes Papyrus registadas".'
+          Get-ChildItem $pkg -Recurse -File | ForEach-Object { $_.FullName.Replace($pkg, '') + '  ' + $_.Length }
+
+      - name: Guardar o pacote
+        uses: actions/upload-artifact@v4
+        with:
+          name: BetterLooting-instalacao
+          path: pkg
+          if-no-files-found: error
