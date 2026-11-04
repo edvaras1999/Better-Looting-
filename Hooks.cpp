@@ -204,7 +204,7 @@ public:
 PlayerCharacterEx::FnStartActivation PlayerCharacterEx::fnStartActivationOld;
 
 
-// Com o menu de loot aberto: C = Pegar tudo, R premido = Procurar.
+// Com o menu de loot aberto: C = Pegar tudo, R = Procurar (um toque por omissao).
 // Estas teclas sao retiradas da lista de eventos, para o jogo nao fazer o que
 // elas fariam com o menu fechado (empunhar arma, etc.).
 class PlayerControlsEx : public PlayerControls
@@ -274,8 +274,10 @@ public:
 					{
 						consume = true;
 
-						// premido o tempo definido: abre o contentor (um toque rapido nao faz nada)
-						if (btn->IsPressed() && !s_searchDone && btn->timer * 1000.0f >= (float)Settings::iSearchHoldMs)
+						// iSearchHoldMs = 0: dispara logo ao tocar; maior que 0: so depois de premido esse tempo
+						const bool reached = (Settings::iSearchHoldMs <= 0) ||
+							(btn->IsPressed() && btn->timer * 1000.0f >= (float)Settings::iSearchHoldMs);
+						if (!s_searchDone && reached)
 						{
 							s_searchDone = true;
 							PlayerCharacterEx::OpenContainer();
@@ -454,7 +456,7 @@ namespace Hooks
 #endif
 		ReadyWeaponHandlerEx::InitHook();			// [R] or (X)
 		PlayerCharacterEx::InitHook();				// [E] or (A)
-		PlayerControlsEx::InitHook();				// [C] Pegar tudo, [R] premido Procurar
+		PlayerControlsEx::InitHook();				// [C] Pegar tudo, [R] Procurar
 
 		// crosshair text patches
 		TESObjectCONTEx::InitHook();

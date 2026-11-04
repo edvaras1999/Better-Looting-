@@ -1,39 +1,51 @@
 #pragma once
 
+// Definicoes do Better Looting. Vem do BetterLooting.ini (ao lado da DLL) e podem ser
+// alteradas no MCM, que grava no mesmo ficheiro. Os nomes comecam por b (0/1) ou i (inteiro).
 struct Settings
 {
+	// comportamento
 	static bool	bDisableInCombat;
 	static bool	bDisableTheft;
 	static bool	bDisablePickpocketing;
 	static bool	bDisableIfEmpty;
 	static bool	bCloseIfEmpty;
-	static bool bUseConsole;
-	static bool bForceAnsi;
-	static bool bDisableLootSingle;
-	static bool bShowValue;
-	static bool bShowWeight;
-	static bool bShowValuePerWeight;
-	static bool bShowItemIcons;
-	static int	iOpacity;
+	static bool	bUseConsole;
+	static bool	bForceAnsi;
+	static bool	bDisableLootSingle;
+
+	// colunas e icones
+	static bool	bShowValue;
+	static bool	bShowWeight;
+	static bool	bShowValuePerWeight;
+	static bool	bShowItemIcons;
+
+	// janela
 	static int	iScale;
-	static int	iPositionX;
-	static int	iPositionY;
-	static int	iItemLimit;
-	static int	iKeyTakeAll;
-	static int	iKeySearch;
-	static int	iSearchHoldMs;
+	static int	iItemLimit;		// maximo de itens na lista (0 = sem limite)
+	static int	iMaxLines;		// linhas visiveis da lista
+	static int	iMinLines;
 	static int	iAnchorX;
 	static int	iAnchorY;
 	static int	iOffsetX;
 	static int	iOffsetY;
-	static int	iMinLines;
 	static int	iAlphaNormal;
 	static int	iAlphaEmpty;
 
-	static bool SetBool(const char *name, bool val);
-	static bool SetInt(const char *name, int val);
-	static bool Set(const char *name, int val);
-	static void Eval(const char *line);
+	// teclas (codigos DirectInput)
+	static int	iKeyTakeAll;
+	static int	iKeySearch;
+	static int	iSearchHoldMs;
+
+	// visual: 0 = Redesigned, 1 = QuickLootIE original
+	static int	iVisual;
+	// idioma do MCM: 0 = English, 1 = Portugues
+	static int	iLanguage;
+
+	static bool Get(const char *name, int &out);			// valor atual
+	static bool GetDefault(const char *name, int &out);		// valor por omissao
+	static bool Set(const char *name, int val);				// so em memoria (consola)
+	static bool SetAndSave(const char *name, int val);		// memoria + BetterLooting.ini
 
 	static void Load();
 };

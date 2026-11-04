@@ -6,6 +6,7 @@
 #include "Settings.h"
 #include "Console.h"
 #include "Hooks.h"
+#include "Papyrus.h"
 
 //========================================================
 // skse plugin
@@ -20,14 +21,14 @@ public:
 
 	virtual bool InitInstance() override
 	{
-		if (!Requires(kSKSEVersion_1_7_1, SKSETaskInterface::Version_2))
+		if (!Requires(kSKSEVersion_1_7_1, SKSETaskInterface::Version_2, SKSEPapyrusInterface::Version_1))
 		{
 			gLog << "ERROR: your skse version is too old." << std::endl;
 			return false;
 		}
 
 		SetName("BetterLooting");
-		SetVersion(1);
+		SetVersion(3);
 
 		return true;
 	}
@@ -35,6 +36,11 @@ public:
 	virtual bool OnLoad() override
 	{
 		SKSEPlugin::OnLoad();
+
+		// funcoes nativas para o MCM
+		const SKSEPapyrusInterface *papyrus = GetInterface(SKSEPapyrusInterface::Version_1);
+		if (papyrus)
+			papyrus->Register(&Papyrus::RegisterFunctions);
 
 		_MESSAGE("");
 

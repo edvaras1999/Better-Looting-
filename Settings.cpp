@@ -1,10 +1,11 @@
-#define WIN32_LEAN_AND_MEAN
-#include <Windows.h>
-#include "Settings.h"
 #include <SKSE.h>
 #include <SKSE/DebugLog.h>
-#include <SKSE/GameStreams.h>
-#include <string>
+#include <Windows.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+
+#include "Settings.h"
 
 bool	Settings::bDisableInCombat = false;
 bool	Settings::bDisableTheft = false;
@@ -18,212 +19,201 @@ bool	Settings::bShowValue = true;
 bool	Settings::bShowWeight = true;
 bool	Settings::bShowValuePerWeight = false;
 bool	Settings::bShowItemIcons = true;
-int		Settings::iOpacity = 25;
+
 int		Settings::iScale = 100;
-int		Settings::iPositionX = -1;
-int		Settings::iPositionY = -1;
-int		Settings::iItemLimit = -1;
-int		Settings::iKeyTakeAll = 46;		// C
-int		Settings::iKeySearch = 19;		// R
-int		Settings::iSearchHoldMs = 500;
+int		Settings::iItemLimit = 0;
+int		Settings::iMaxLines = 7;
+int		Settings::iMinLines = 0;
 int		Settings::iAnchorX = 0;
 int		Settings::iAnchorY = 0;
 int		Settings::iOffsetX = 100;
 int		Settings::iOffsetY = -200;
-int		Settings::iMinLines = 0;
 int		Settings::iAlphaNormal = 100;
 int		Settings::iAlphaEmpty = 30;
 
-bool Settings::SetBool(const char *name, bool val)
+int		Settings::iKeyTakeAll = 46;		// C
+int		Settings::iKeySearch = 19;		// R
+int		Settings::iSearchHoldMs = 0;	// 0 = um toque
+
+int		Settings::iVisual = 0;			// Redesigned
+int		Settings::iLanguage = 0;		// English
+
+namespace
 {
-	if (_stricmp(name, "bDisableInCombat") == 0)
+	struct Entry
 	{
-		bDisableInCombat = val;
+		const char	*name;
+		void		*ptr;
+		bool		isBool;
+		int			def;
+		int			minVal;
+		int			maxVal;
+	};
+
+	const Entry kTable[] =
+	{
+		{ "bDisableInCombat",		&Settings::bDisableInCombat,		true,	0, 0, 1 },
+		{ "bDisableTheft",			&Settings::bDisableTheft,			true,	0, 0, 1 },
+		{ "bDisablePickpocketing",	&Settings::bDisablePickpocketing,	true,	0, 0, 1 },
+		{ "bDisableIfEmpty",		&Settings::bDisableIfEmpty,			true,	0, 0, 1 },
+		{ "bCloseIfEmpty",			&Settings::bCloseIfEmpty,			true,	0, 0, 1 },
+		{ "bUseConsole",			&Settings::bUseConsole,				true,	0, 0, 1 },
+		{ "bForceAnsi",				&Settings::bForceAnsi,				true,	0, 0, 1 },
+		{ "bDisableLootSingle",		&Settings::bDisableLootSingle,		true,	0, 0, 1 },
+		{ "bShowValue",				&Settings::bShowValue,				true,	1, 0, 1 },
+		{ "bShowWeight",			&Settings::bShowWeight,				true,	1, 0, 1 },
+		{ "bShowValuePerWeight",	&Settings::bShowValuePerWeight,		true,	0, 0, 1 },
+		{ "bShowItemIcons",			&Settings::bShowItemIcons,			true,	1, 0, 1 },
+
+		{ "iScale",					&Settings::iScale,					false,	100,	25,		400 },
+		{ "iItemLimit",				&Settings::iItemLimit,				false,	0,		0,		200 },
+		{ "iMaxLines",				&Settings::iMaxLines,				false,	7,		1,		25 },
+		{ "iMinLines",				&Settings::iMinLines,				false,	0,		0,		25 },
+		{ "iAnchorX",				&Settings::iAnchorX,				false,	0,		0,		2 },
+		{ "iAnchorY",				&Settings::iAnchorY,				false,	0,		0,		2 },
+		{ "iOffsetX",				&Settings::iOffsetX,				false,	100,	-2000,	2000 },
+		{ "iOffsetY",				&Settings::iOffsetY,				false,	-200,	-2000,	2000 },
+		{ "iAlphaNormal",			&Settings::iAlphaNormal,			false,	100,	10,		100 },
+		{ "iAlphaEmpty",			&Settings::iAlphaEmpty,				false,	30,		0,		100 },
+
+		{ "iKeyTakeAll",			&Settings::iKeyTakeAll,				false,	46,		1,		255 },
+		{ "iKeySearch",				&Settings::iKeySearch,				false,	19,		1,		255 },
+		{ "iSearchHoldMs",			&Settings::iSearchHoldMs,			false,	0,		0,		2000 },
+
+		{ "iVisual",				&Settings::iVisual,					false,	0,		0,		1 },
+		{ "iLanguage",				&Settings::iLanguage,				false,	0,		0,		1 },
+	};
+
+	const char kSection[] = "Settings";
+
+	const Entry *Find(const char *name)
+	{
+		if (!name)
+			return nullptr;
+		for (const Entry &e : kTable)
+		{
+			if (_stricmp(e.name, name) == 0)
+				return &e;
+		}
+		return nullptr;
 	}
-	else if (_stricmp(name, "bDisableTheft") == 0)
+
+	int Clamp(const Entry &e, int v)
 	{
-		bDisableTheft = val;
+		if (v < e.minVal) return e.minVal;
+		if (v > e.maxVal) return e.maxVal;
+		return v;
 	}
-	else if (_stricmp(name, "bDisablePickpocketing") == 0)
+
+	int Read(const Entry &e)
 	{
-		bDisablePickpocketing = val;
+		return e.isBool ? (*static_cast<bool *>(e.ptr) ? 1 : 0) : *static_cast<int *>(e.ptr);
 	}
-	else if (_stricmp(name, "bDisableIfEmpty") == 0)
+
+	void Write(const Entry &e, int v)
 	{
-		bDisableIfEmpty = val;
+		v = Clamp(e, v);
+		if (e.isBool)
+			*static_cast<bool *>(e.ptr) = (v != 0);
+		else
+			*static_cast<int *>(e.ptr) = v;
 	}
-	else if (_stricmp(name, "bCloseIfEmpty") == 0)
+
+	// BetterLooting.ini fica ao lado da DLL (funciona tambem com o MO2)
+	const char *IniPath()
 	{
-		bCloseIfEmpty = val;
+		static char path[MAX_PATH] = "";
+		if (!path[0])
+		{
+			HMODULE hm = nullptr;
+			if (GetModuleHandleExA(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+				(LPCSTR)&IniPath, &hm) && hm && GetModuleFileNameA(hm, path, MAX_PATH))
+			{
+				char *dot = strrchr(path, '.');
+				if (dot)
+					strcpy_s(dot, (size_t)(path + MAX_PATH - dot), ".ini");
+				else
+					strcat_s(path, MAX_PATH, ".ini");
+			}
+			else
+			{
+				strcpy_s(path, MAX_PATH, "Data\\SKSE\\Plugins\\BetterLooting.ini");
+			}
+		}
+		return path;
 	}
-	else if (_stricmp(name, "bUseConsole") == 0)
-	{
-		bUseConsole = val;
-	}
-	else if (_stricmp(name, "bForceAnsi") == 0)
-	{
-		bForceAnsi = val;
-	}
-	else if (_stricmp(name, "bDisableLootSingle") == 0)
-	{
-		bDisableLootSingle = val;
-	}
-	else if (_stricmp(name, "bShowValue") == 0)
-	{
-		bShowValue = val;
-	}
-	else if (_stricmp(name, "bShowWeight") == 0)
-	{
-		bShowWeight = val;
-	}
-	else if (_stricmp(name, "bShowValuePerWeight") == 0)
-	{
-		bShowValuePerWeight = val;
-	}
-	else if (_stricmp(name, "bShowItemIcons") == 0)
-	{
-		bShowItemIcons = val;
-	}
-	else
-	{
+}
+
+
+bool Settings::Get(const char *name, int &out)
+{
+	const Entry *e = Find(name);
+	if (!e)
 		return false;
-	}
-
-	_MESSAGE("  %s = %d", name, val);
-
+	out = Read(*e);
 	return true;
 }
 
 
-bool Settings::SetInt(const char *name, int val)
+bool Settings::GetDefault(const char *name, int &out)
 {
-	if (_stricmp(name, "iOpacity") == 0)
-	{
-		iOpacity = val;
-	}
-	else if (_stricmp(name, "iScale") == 0)
-	{
-		iScale = val;
-	}
-	else if (_stricmp(name, "iPositionX") == 0)
-	{
-		iPositionX = val;
-	}
-	else if (_stricmp(name, "iPositionY") == 0)
-	{
-		iPositionY = val;
-	}
-	else if (_stricmp(name, "iItemLimit") == 0)
-	{
-		iItemLimit = val;
-	}
-	else if (_stricmp(name, "iKeyTakeAll") == 0)
-	{
-		iKeyTakeAll = val;
-	}
-	else if (_stricmp(name, "iKeySearch") == 0)
-	{
-		iKeySearch = val;
-	}
-	else if (_stricmp(name, "iSearchHoldMs") == 0)
-	{
-		iSearchHoldMs = val;
-	}
-	else if (_stricmp(name, "iAnchorX") == 0)
-	{
-		iAnchorX = val;
-	}
-	else if (_stricmp(name, "iAnchorY") == 0)
-	{
-		iAnchorY = val;
-	}
-	else if (_stricmp(name, "iOffsetX") == 0)
-	{
-		iOffsetX = val;
-	}
-	else if (_stricmp(name, "iOffsetY") == 0)
-	{
-		iOffsetY = val;
-	}
-	else if (_stricmp(name, "iMinLines") == 0)
-	{
-		iMinLines = val;
-	}
-	else if (_stricmp(name, "iAlphaNormal") == 0)
-	{
-		iAlphaNormal = val;
-	}
-	else if (_stricmp(name, "iAlphaEmpty") == 0)
-	{
-		iAlphaEmpty = val;
-	}
-	else
-	{
+	const Entry *e = Find(name);
+	if (!e)
 		return false;
-	}
-
-	_MESSAGE("  %s = %d", name, val);
-
+	out = e->def;
 	return true;
 }
 
 
 bool Settings::Set(const char *name, int val)
 {
-	if (!name || !name[0])
+	const Entry *e = Find(name);
+	if (!e)
 		return false;
-
-	if (name[0] == 'b')
-		return SetBool(name, (val != 0));
-	if (name[0] == 'i')
-		return SetInt(name, val);
-
-	return false;
+	Write(*e, val);
+	_MESSAGE("  %s = %d", e->name, Read(*e));
+	return true;
 }
 
 
-void Settings::Eval(const char *line)
+bool Settings::SetAndSave(const char *name, int val)
 {
-	char buf[256];
-	strcpy_s(buf, line);
+	const Entry *e = Find(name);
+	if (!e)
+		return false;
 
-	char *ctx;
-	char *name = strtok_s(buf, "=", &ctx);
-	if (name && name[0])
-	{
-		char *val = strtok_s(nullptr, "", &ctx);
-		if (val && val[0])
-		{
-			if (val[0] == '-')
-			{
-				Set(name, -atoi(val+1));
-			}
-			else
-			{
-				Set(name, atoi(val));
-			}
-		}
-	}
+	Write(*e, val);
+
+	char buf[16];
+	sprintf_s(buf, "%d", Read(*e));
+	if (!WritePrivateProfileStringA(kSection, e->name, buf, IniPath()))
+		_MESSAGE("AVISO: nao consegui gravar %s no ini (erro %lu)", e->name, GetLastError());
+
+	return true;
 }
 
 
 void Settings::Load()
 {
-	BSResourceNiBinaryStream iniStream("SKSE\\BetterLooting.ini");
-	if (!iniStream)
-		return;
+	const char *path = IniPath();
+	_MESSAGE("Settings::Load() de %s", path);
 
-	char buf[256];
-
-	_MESSAGE("Settings::Load()");
-	while (true)
+	DWORD attr = GetFileAttributesA(path);
+	if (attr == INVALID_FILE_ATTRIBUTES)
 	{
-		UInt32 len = iniStream.ReadLine(buf, 250);
-		if (len == 0)
-			break;
-		buf[len] = 0;
+		_MESSAGE("  AVISO: o ficheiro nao existe, uso os valores por omissao");
+		return;
+	}
 
-		Eval(buf);
+	for (const Entry &e : kTable)
+	{
+		char buf[32] = "";
+		GetPrivateProfileStringA(kSection, e.name, "", buf, sizeof(buf), path);
+		if (buf[0])
+			Write(e, atoi(buf));
+		else
+			Write(e, e.def);
+		_MESSAGE("  %s = %d", e.name, Read(e));
 	}
 	_MESSAGE("");
 }

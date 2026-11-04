@@ -23,6 +23,7 @@ protected:
 	//std::vector<ItemData>		m_items;
 	BSTArray<ItemData>			m_items;
 	const char *				m_mcRoot;
+	int							m_visual;		// visual com que este menu foi criado (Settings::iVisual)
 	bool						m_bNowTaking;
 	bool						m_bOpenAnim;
 	bool						m_bUpdateRequest;
@@ -41,6 +42,7 @@ public:
 	static bool Install();
 	static bool SendRequestStart();
 	static bool SendRequestStop();
+	static void RequestVisualReload();
 	static LootMenu * GetSingleton()	{ return ms_pSingleton; }
 
 	void Setup();

@@ -194,9 +194,10 @@ public:
 //========================================================
 
 LootMenu::LootMenu() : m_targetRef(nullptr), m_containerRef(nullptr), m_owner(nullptr), m_items(), m_selectedIndex(-1),
-	m_bNowTaking(false), m_bOpenAnim(false), m_bUpdateRequest(false), m_bDisabled(false), m_mcRoot(nullptr)
+	m_bNowTaking(false), m_bOpenAnim(false), m_bUpdateRequest(false), m_bDisabled(false), m_mcRoot(nullptr), m_visual(Settings::iVisual)
 {
-	const char swfPath[] = "LootMenuIE";
+	// visual 0 = Redesigned (padrao), 1 = QuickLootIE original
+	const char *swfPath = (m_visual == 1) ? "LootMenuIE" : "LootMenuRedesigned";
 
 	_MESSAGE("LootMenu::LootMenu()");
 
@@ -334,8 +335,25 @@ void LootMenu::Setup()
 }
 
 
+void LootMenu::RequestVisualReload()
+{
+	// A troca e feita em OnMenuOpen, na proxima vez que o menu abrir.
+	_MESSAGE("Visual alterado para %d: o menu sera recriado na proxima abertura", Settings::iVisual);
+}
+
+
 void LootMenu::OnMenuOpen()
 {
+	// O SWF so e lido quando o menu e criado. Se o visual mudou no MCM, tira-se a marca
+	// que impede o jogo de apagar o menu e fecha-se: na proxima abertura cria-se um novo.
+	if (m_visual != Settings::iVisual)
+	{
+		_MESSAGE("  visual alterado (%d -> %d): a recriar o menu", m_visual, Settings::iVisual);
+		flags &= ~kType_DoNotDeleteOnClose;
+		UIManager::GetSingleton()->AddMessage("Better Looting Menu", UIMessage::kMessage_Close, nullptr);
+		return;
+	}
+
 	if (view)
 	{
 		BSSpinLockGuard guard(ms_lock);
@@ -1295,9 +1313,9 @@ void LootMenu::UI_Init(GFxMovieView *a_view)
 		scale = s * 0.01;
 	}
 
-	double maxLines = 7;
-	if (Settings::iItemLimit > 0)
-		maxLines = (Settings::iItemLimit > 25) ? 25 : Settings::iItemLimit;
+	double maxLines = Settings::iMaxLines;
+	if (maxLines < 1) maxLines = 1;
+	if (maxLines > 25) maxLines = 25;
 
 	double minLines = Settings::iMinLines;
 	if (minLines < 0) minLines = 0;

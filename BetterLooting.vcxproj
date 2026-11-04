@@ -101,6 +101,7 @@
     <ClCompile Include="ItemData.cpp" />
     <ClCompile Include="LootMenu.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="Papyrus.cpp" />
     <ClCompile Include="Settings.cpp" />
     <ClCompile Include="UTF8.cpp" />
   </ItemGroup>
@@ -117,6 +118,7 @@
     <ClInclude Include="Hooks.h" />
     <ClInclude Include="ItemData.h" />
     <ClInclude Include="LootMenu.h" />
+    <ClInclude Include="Papyrus.h" />
     <ClInclude Include="Settings.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
