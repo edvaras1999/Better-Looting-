@@ -6,7 +6,9 @@
 #include <SKSE/GameObjects.h>
 #include <SKSE/GameReferences.h>
 #include <SKSE/PapyrusInvoke.h>
+#include <SKSE/SKSEEvents.h>
 #include <Skyrim/SkyrimVM.h>
+#include <Skyrim/FileIO/TESDataHandler.h>
 
 #include "Highlight.h"
 #include "Settings.h"
@@ -61,24 +63,24 @@ namespace
 		return true;
 	}
 
-	bool TypeEnabled(UInt32 t)
+	bool TypeEnabled(FormType t)
 	{
-		if (t == (UInt32)FormType::Activator)			return Settings::bHLActivator;
-		if (t == (UInt32)FormType::TalkingActivator)	return Settings::bHLTalkingActivator;
-		if (t == (UInt32)FormType::Container)			return Settings::bHLContainer;
-		if (t == (UInt32)FormType::Door)				return Settings::bHLDoor;
-		if (t == (UInt32)FormType::Flora || t == (UInt32)FormType::Tree)	return Settings::bHLFlora;
-		if (t == (UInt32)FormType::Furniture)			return Settings::bHLFurniture;
-		if (t == (UInt32)FormType::Armor)				return Settings::bHLArmor;
-		if (t == (UInt32)FormType::Weapon)				return Settings::bHLWeapon;
-		if (t == (UInt32)FormType::Ammo)				return Settings::bHLAmmo;
-		if (t == (UInt32)FormType::Book)				return Settings::bHLBook;
-		if (t == (UInt32)FormType::Ingredient)			return Settings::bHLIngredient;
-		if (t == (UInt32)FormType::Key)					return Settings::bHLKey;
-		if (t == (UInt32)FormType::Misc)				return Settings::bHLMisc;
-		if (t == (UInt32)FormType::Potion)				return Settings::bHLPotion;
-		if (t == (UInt32)FormType::ScrollItem)			return Settings::bHLScroll;
-		if (t == (UInt32)FormType::SoulGem)				return Settings::bHLSoulGem;
+		if (t == FormType::Activator)			return Settings::bHLActivator;
+		if (t == FormType::TalkingActivator)	return Settings::bHLTalkingActivator;
+		if (t == FormType::Container)			return Settings::bHLContainer;
+		if (t == FormType::Door)				return Settings::bHLDoor;
+		if (t == FormType::Flora || t == FormType::Tree)	return Settings::bHLFlora;
+		if (t == FormType::Furniture)			return Settings::bHLFurniture;
+		if (t == FormType::Armor)				return Settings::bHLArmor;
+		if (t == FormType::Weapon)				return Settings::bHLWeapon;
+		if (t == FormType::Ammo)				return Settings::bHLAmmo;
+		if (t == FormType::Book)				return Settings::bHLBook;
+		if (t == FormType::Ingredient)			return Settings::bHLIngredient;
+		if (t == FormType::Key)					return Settings::bHLKey;
+		if (t == FormType::Misc)				return Settings::bHLMisc;
+		if (t == FormType::Potion)				return Settings::bHLPotion;
+		if (t == FormType::ScrollItem)			return Settings::bHLScroll;
+		if (t == FormType::SoulGem)				return Settings::bHLSoulGem;
 		return false;
 	}
 
@@ -90,11 +92,11 @@ namespace
 		if (ref->IsDeleted() || ref->IsDisabled())
 			return;
 
-		if (ref->flags & TESObjectREFR::kFlag_Harvested)
+		if ((*(const UInt32 *)&ref->flags) & TESObjectREFR::kFlag_Harvested)
 			return;
 
-		const UInt32 type = ref->baseForm->formType;
-		if (type == (UInt32)FormType::Character || !TypeEnabled(type))
+		const FormType type = ref->baseForm->formType;
+		if (type == FormType::Character || !TypeEnabled(type))
 			return;
 
 		if (!ref->Is3DLoaded())
@@ -108,7 +110,7 @@ namespace
 		}
 
 		// o que seria roubo fica a vermelho (portas nao)
-		const bool stealable = Settings::bHLRedStealable && type != (UInt32)FormType::Door && ref->IsOffLimits();
+		const bool stealable = Settings::bHLRedStealable && type != FormType::Door && ref->IsOffLimits();
 
 		int color = stealable ? 4 : Settings::iHLColor;
 		if (color < 0 || color >= kColors)
@@ -160,7 +162,7 @@ void Highlight::Init()
 	for (int i = 0; i < kColors * kPerColor; ++i)
 	{
 		TESForm *form = LookupFormByID(((UInt32)modIndex << 24) | (kFirstLocalID + (UInt32)i));
-		if (form && form->formType == (UInt32)FormType::EffectShader)
+		if (form && form->formType == FormType::EffectShader)
 		{
 			g_shaders[i] = static_cast<TESEffectShader *>(form);
 			++found;
@@ -184,7 +186,7 @@ void Highlight::Init()
 
 	const SKSEPlugin *plugin = SKSEPlugin::GetSingleton();
 	const SKSEMessagingInterface *mes = plugin ? plugin->GetInterface(SKSEMessagingInterface::Version_1) : nullptr;
-	BSTEventSource<SKSECrosshairRefEvent> *source = mes ? mes->GetEventDispatcher<SKSECrosshairRefEvent>() : nullptr;
+	BSTEventSource<SKSECrosshairRefEvent> *source = mes ? (BSTEventSource<SKSECrosshairRefEvent> *)mes->GetEventDispatcher(SKSEMessagingInterface::kDispatcher_CrosshairEvent) : nullptr;
 	if (!source)
 	{
 		_MESSAGE("ERRO: nao consegui registar o evento da mira; o realce fica desligado");
