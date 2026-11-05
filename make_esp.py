@@ -68,6 +68,10 @@ def shader_data(rgb, slot):
     struct.pack_into('<f', d, 0x48, 0.0)                      # contorno: razao de alfa persistente
     struct.pack_into('<f', d, 0x54, 0.05)                     # preenchimento: razao de alfa total
     struct.pack_into('<f', d, 0x58, 1.0)                      # contorno: razao de alfa total
+    # Outras cores do shader que no original eram brancas/cinzentas e deixavam o brilho branco:
+    # 0x10C (cor do contorno), 0x138 e 0x13C (chaves de cor 2 e 3 do preenchimento). Mantem-se o byte de alfa.
+    for off in (0x10C, 0x138, 0x13C):
+        d[off:off + 3] = bytes((r, g, b))
     return bytes(d)
 
 
