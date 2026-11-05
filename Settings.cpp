@@ -44,8 +44,7 @@ bool	Settings::bHLRedStealable = true;
 bool	Settings::bHLIgnoreUnnamed = true;
 int		Settings::iHLColor = 0;
 int		Settings::iHLCrosshairMs = 800;
-bool	Settings::bHLClassicPalette = false;
-int		Settings::iHLFillPercent = 60;
+int		Settings::iHLFillPercent = 15;
 bool	Settings::bHLDebug = false;
 bool	Settings::bHLScanEnabled = true;
 int		Settings::iHLScanKey = 18;			// E
@@ -127,8 +126,7 @@ namespace
 		{ "bHLRedStealable",		&Settings::bHLRedStealable,			true,	1, 0, 1 },
 		{ "bHLIgnoreUnnamed",		&Settings::bHLIgnoreUnnamed,			true,	1, 0, 1 },
 		{ "iHLColor",				&Settings::iHLColor,				false,	0, 0, 4 },
-		{ "bHLClassicPalette",		&Settings::bHLClassicPalette,		true,	0, 0, 1 },
-		{ "iHLFillPercent",			&Settings::iHLFillPercent,			false,	60, 0, 100 },
+		{ "iHLFillPercent",			&Settings::iHLFillPercent,			false,	15, 0, 100 },
 		{ "bHLDebug",				&Settings::bHLDebug,				true,	0, 0, 1 },
 		{ "bHLScanEnabled",			&Settings::bHLScanEnabled,			true,	1, 0, 1 },
 		{ "iHLScanKey",				&Settings::iHLScanKey,				false,	18, 1, 255 },

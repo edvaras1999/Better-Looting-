@@ -54,7 +54,6 @@ struct Settings
 	static bool	bHLIgnoreUnnamed;
 	static int	iHLColor;			// 0 dourado, 1 branco, 2 verde, 3 ciano, 4 vermelho
 	static int	iHLCrosshairMs;		// duracao do realce na mira
-	static bool	bHLClassicPalette;	// brilho branco classico (paleta do shader original)
 	static int	iHLFillPercent;		// forca do brilho de preenchimento (0 a 100)
 	static bool	bHLDebug;			// regista no log o que o realce decide para cada objeto na mira
 

@@ -26,13 +26,24 @@ BASE_DATA = bytes.fromhex(
 )
 
 TEX_ICON = b'Effects\\EnchFlameProject01.dds'
-TEX_FILL = b'Effects\\Gradients\\GradAmbFog01.dds'
 
 COLORS = [('Gold', (255, 215, 0)), ('White', (255, 255, 255)), ('Green', (0, 255, 102)),
           ('Cyan', (0, 200, 255)), ('Red', (255, 40, 40))]
 PER_COLOR = 32
 CROSSHAIR_SLOTS = 4
 FORM_VERSION = 43
+
+
+def palette_dds(rgb):
+    """DDS (DXT1, 256x4) de cor solida: a textura de paleta do shader passa a dar a cor escolhida.
+    Com o bit "cinzento para cor" ligado, a cor do brilho vem desta paleta e nao das chaves de cor."""
+    r, g, b = rgb
+    c565 = ((r >> 3) << 11) | ((g >> 2) << 5) | (b >> 3)
+    width, height = 256, 4
+    data = struct.pack('<HHI', c565, c565, 0) * ((width // 4) * (height // 4))
+    header = (b'DDS ' + struct.pack('<7I', 124, 0x81007, height, width, len(data), 0, 0) + b'\x00' * 44 +
+              struct.pack('<2I4s5I', 32, 4, b'DXT1', 0, 0, 0, 0, 0) + struct.pack('<5I', 0x1000, 0, 0, 0, 0))
+    return header + data
 
 
 def sub(tag, data=b''):
@@ -57,10 +68,6 @@ def grup(label, recs):
 
 def shader_data(rgb, slot):
     d = bytearray(BASE_DATA)
-    # O original pinta o brilho pela textura de paleta (bit 1 = "cinzento para cor"), que e branca/cinzenta.
-    # Com esse bit desligado, o brilho usa as cores definidas abaixo.
-    flags = struct.unpack_from('<I', d, 0)[0] & ~0x2
-    struct.pack_into('<I', d, 0, flags)
     r, g, b = rgb
     d[0x10:0x14] = bytes((r, g, b, 20))                       # preenchimento: cor 1 (alfa 20)
     struct.pack_into('<f', d, 0x20, 0.01)                     # preenchimento: razao de alfa persistente
@@ -70,7 +77,7 @@ def shader_data(rgb, slot):
     struct.pack_into('<f', d, 0x40, 0.4 if slot < CROSSHAIR_SLOTS else 2.6)   # contorno: tempo com alfa total
     struct.pack_into('<f', d, 0x44, 0.3)                      # contorno: saida
     struct.pack_into('<f', d, 0x48, 0.0)                      # contorno: razao de alfa persistente
-    struct.pack_into('<f', d, 0x54, 0.05)                     # preenchimento: razao de alfa total
+    struct.pack_into('<f', d, 0x54, 0.15)                     # preenchimento: razao de alfa total (forca do brilho)
     struct.pack_into('<f', d, 0x58, 1.0)                      # contorno: razao de alfa total
     # Outras cores do shader que no original eram brancas/cinzentas e deixavam o brilho branco:
     # 0x10C (cor do contorno), 0x138 e 0x13C (chaves de cor 2 e 3 do preenchimento). Mantem-se o byte de alfa.
@@ -102,7 +109,7 @@ for ci, (cname, rgb) in enumerate(COLORS):
             sub('ICON', TEX_ICON + b'\x00'),
             sub('ICO2', b'\x00'),
             sub('NAM7', b'\x00'),
-            sub('NAM8', TEX_FILL + b'\x00'),
+            sub('NAM8', (u'Effects\\Gradients\\BetterLooting_%s.dds' % cname).encode('latin1') + b'\x00'),
             sub('NAM9', b'\x00'),
             sub('DATA', shader_data(rgb, slot)),
         ]))
@@ -125,4 +132,9 @@ with open(os.path.join(root, 'BetterLooting.esp'), 'wb') as f:
     f.write(esp)
 with open(os.path.join(root, 'SEQ', 'BetterLooting.seq'), 'wb') as f:
     f.write(struct.pack('<I', ID_QUST))
+tex_dir = os.path.join(root, 'Textures', 'Effects', 'Gradients')
+os.makedirs(tex_dir, exist_ok=True)
+for cname, rgb in COLORS:
+    with open(os.path.join(tex_dir, 'BetterLooting_%s.dds' % cname), 'wb') as f:
+        f.write(palette_dds(rgb))
 print('BetterLooting.esp: %d bytes, %d shaders; BetterLooting.seq: quest %08X' % (len(esp), len(efsh), ID_QUST))

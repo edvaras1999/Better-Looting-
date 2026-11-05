@@ -30,7 +30,6 @@ namespace
 	const int kOffFillKey = 0x10;			// preenchimento: chave de cor 1 (RGBA)
 	const int kOffFillPersistent = 0x20;	// preenchimento: razao de alfa persistente
 	const int kOffFillFullRatio = 0x54;		// preenchimento: razao de alfa total
-	const int kOffFlags = 0x00;				// bit 1 = "cinzento para cor" (usa a paleta, branca)
 	const float kCrosshairFullAlpha = 0.4f;
 
 	const UInt8 kPalette[kColors][3] = {
@@ -136,7 +135,7 @@ namespace
 		UInt8 *d = shader->unk14.pad;
 		const UInt8 *rgb = kPalette[color];
 
-		// cor em todos os campos onde o shader original era branco/cinzento
+		// a cor do preenchimento vem da paleta BetterLooting_<cor>.dds; estas cores servem de reforco
 		d[kOffFillKey] = rgb[0]; d[kOffFillKey + 1] = rgb[1]; d[kOffFillKey + 2] = rgb[2]; d[kOffFillKey + 3] = 255;
 		d[kOffEdgeColor] = rgb[0]; d[kOffEdgeColor + 1] = rgb[1]; d[kOffEdgeColor + 2] = rgb[2]; d[kOffEdgeColor + 3] = 255;
 		const int extra[3] = { 0x10C, 0x138, 0x13C };
@@ -144,13 +143,6 @@ namespace
 		{
 			d[extra[k]] = rgb[0]; d[extra[k] + 1] = rgb[1]; d[extra[k] + 2] = rgb[2];
 		}
-
-		// paleta classica (branca) ou cor propria
-		UInt32 *flags = (UInt32 *)(d + kOffFlags);
-		if (Settings::bHLClassicPalette)
-			*flags |= 0x2;
-		else
-			*flags &= ~0x2u;
 
 		// forca do brilho de preenchimento
 		int percent = Settings::iHLFillPercent;
@@ -180,15 +172,34 @@ namespace
 		CallPlay(shader, ref, seconds + 1.0f);
 	}
 
+	bool IsLootableCorpse(TESObjectREFR *ref);
+
 	void OnCrosshair(TESObjectREFR *ref)
 	{
 		if (!g_ready || !Settings::bHLEnabled || !ref || ref == g_thePlayer || !ref->baseForm)
 			return;
 
+		// cadaver com loot na mira: brilha na cor dos cadaveres
+		if (ref->formType == FormType::Character)
+		{
+			if (Settings::bHLCorpses && IsLootableCorpse(ref))
+			{
+				const UInt32 corpseSlot = (g_slot++) % kCrosshairSlots;
+				if (Settings::bHLDebug)
+					_MESSAGE("Highlight: mira %08X cadaver: cor %d, posicao %u", ref->formID, Settings::iHLCorpseColor, corpseSlot);
+				ApplyShader(ref, Settings::iHLCorpseColor, corpseSlot, Settings::iHLCrosshairMs * 0.001f);
+			}
+			else if (Settings::bHLDebug)
+			{
+				_MESSAGE("Highlight: mira %08X ator: ignorado (nao e um cadaver com loot)", ref->formID);
+			}
+			return;
+		}
+
 		const FormType type = ref->baseForm->formType;
 
 		bool stealable = false;
-		if (ref->formType == FormType::Character || !PassesObjectFilters(ref, type, stealable))
+		if (!PassesObjectFilters(ref, type, stealable))
 		{
 			if (Settings::bHLDebug)
 				_MESSAGE("Highlight: mira %08X tipo %d: ignorado", ref->formID, (int)type);

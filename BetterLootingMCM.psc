@@ -63,10 +63,10 @@ string Function L(string en, string pt)
 EndFunction
 
 Function BuildTables()
-	tKey = new string[36]
-	tEN = new string[36]
-	tPT = new string[36]
-	tOpt = new int[36]
+	tKey = new string[35]
+	tEN = new string[35]
+	tPT = new string[35]
+	tOpt = new int[35]
 	tKey[0] = "bDisableInCombat"
 	tEN[0] = "Disable in combat"
 	tPT[0] = "Desativar em combate"
@@ -172,9 +172,6 @@ Function BuildTables()
 	tKey[34] = "bHLCorpseHideSearched"
 	tEN[34] = "Hide corpses already searched"
 	tPT[34] = "Esconder cadaveres ja revistados"
-	tKey[35] = "bHLClassicPalette"
-	tEN[35] = "Classic white glow (original shader palette)"
-	tPT[35] = "Brilho branco classico (paleta do shader original)"
 
 	sKey = new string[16]
 	sEN = new string[16]
@@ -425,7 +422,6 @@ Event OnPageReset(string a_page)
 		AddToggleRange(14, 15)
 		sOpt[9] = AddSliderOption(L(sEN[9], sPT[9]), BetterLootingNative.GetInt(sKey[9], 800) as float, sFmt[9])
 		AddSliderRange(15, 15)
-		AddToggleRange(35, 35)
 		AddHeaderOption(L("Object types", "Tipos de objeto"))
 		AddToggleRange(16, 31)
 		AddHeaderOption(L("Area scan", "Varrimento por raio"))

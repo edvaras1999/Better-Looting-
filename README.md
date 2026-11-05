@@ -4,7 +4,7 @@ Plugin SKSE (1.7.3) para Skyrim LE que junta, num unico plugin, o menu de loot d
 (com o visual do QuickLoot Redesigned), o realce de objetos (Highlight Objects) e a
 sobrevivencia (EatingSleepingDrinking), com os patches de animacao.
 
-Estado: **v0.7** - menu de loot completo (com peso do jogador), MCM, dois visuais, ordenacao, realce de objetos na mira, varrimento por raio e cadaveres com loot. O plugin parte do codigo do
+Estado: **v0.8** - menu de loot completo (com peso do jogador), MCM, dois visuais, ordenacao, realce de objetos na mira, varrimento por raio e cadaveres com loot. O plugin parte do codigo do
 QuickLoot 1.1f (LE) e fala o protocolo do `LootMenuIE.swf` do QuickLootIE.
 
 ## Teclas (menu de loot aberto)
@@ -28,7 +28,8 @@ O objeto para que olhas ganha um brilho (efeito de shader do jogo, aplicado pela
 Cor e duracao configuraveis; o que seria roubo fica a vermelho; filtro por tipo de objeto (ativadores,
 contentores, portas, flora, mobilia, armaduras, armas, municao, livros, ingredientes, chaves, misc, pocoes,
 pergaminhos, gemas de alma). Os shaders vivem no `BetterLooting.esp` (gerado por `tools/make_esp.py` a partir
-dos dados do Highlight Objects EdgeLight Edition). O contorno em D3D11 do original nao existe no LE.
+dos dados do Highlight Objects EdgeLight Edition). A cor do brilho vem de 5 paletas (`dist/Data/Textures/Effects/Gradients/BetterLooting_<cor>.dds`,
+geradas tambem pelo `make_esp.py`). O contorno em D3D11 do original nao existe no LE.
 
 **Varrimento por raio:** mantendo o **E** premido (500 ms por omissao; tecla e tempo no MCM) realca os objetos
 a volta (raio 1500, 3 s) e tambem os **cadaveres com loot** (verde por omissao). Manter premido refresca o brilho.
