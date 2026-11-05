@@ -4,7 +4,7 @@ Plugin SKSE (1.7.3) para Skyrim LE que junta, num unico plugin, o menu de loot d
 (com o visual do QuickLoot Redesigned), o realce de objetos (Highlight Objects) e a
 sobrevivencia (EatingSleepingDrinking), com os patches de animacao.
 
-Estado: **v0.6** - menu de loot completo (com peso do jogador), MCM, dois visuais, ordenacao, realce de objetos na mira, varrimento por raio e cadaveres com loot. O plugin parte do codigo do
+Estado: **v0.7** - menu de loot completo (com peso do jogador), MCM, dois visuais, ordenacao, realce de objetos na mira, varrimento por raio e cadaveres com loot. O plugin parte do codigo do
 QuickLoot 1.1f (LE) e fala o protocolo do `LootMenuIE.swf` do QuickLootIE.
 
 ## Teclas (menu de loot aberto)

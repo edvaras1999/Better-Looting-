@@ -63,10 +63,10 @@ string Function L(string en, string pt)
 EndFunction
 
 Function BuildTables()
-	tKey = new string[35]
-	tEN = new string[35]
-	tPT = new string[35]
-	tOpt = new int[35]
+	tKey = new string[36]
+	tEN = new string[36]
+	tPT = new string[36]
+	tOpt = new int[36]
 	tKey[0] = "bDisableInCombat"
 	tEN[0] = "Disable in combat"
 	tPT[0] = "Desativar em combate"
@@ -172,15 +172,18 @@ Function BuildTables()
 	tKey[34] = "bHLCorpseHideSearched"
 	tEN[34] = "Hide corpses already searched"
 	tPT[34] = "Esconder cadaveres ja revistados"
+	tKey[35] = "bHLClassicPalette"
+	tEN[35] = "Classic white glow (original shader palette)"
+	tPT[35] = "Brilho branco classico (paleta do shader original)"
 
-	sKey = new string[15]
-	sEN = new string[15]
-	sPT = new string[15]
-	sMin = new float[15]
-	sMax = new float[15]
-	sStep = new float[15]
-	sFmt = new string[15]
-	sOpt = new int[15]
+	sKey = new string[16]
+	sEN = new string[16]
+	sPT = new string[16]
+	sMin = new float[16]
+	sMax = new float[16]
+	sStep = new float[16]
+	sFmt = new string[16]
+	sOpt = new int[16]
 	sKey[0] = "iScale"
 	sEN[0] = "Window scale"
 	sPT[0] = "Escala da janela"
@@ -286,6 +289,13 @@ Function BuildTables()
 	sMax[14] = 5000.0
 	sStep[14] = 100.0
 	sFmt[14] = "{0}"
+	sKey[15] = "iHLFillPercent"
+	sEN[15] = "Glow strength"
+	sPT[15] = "Forca do brilho"
+	sMin[15] = 0.0
+	sMax[15] = 100.0
+	sStep[15] = 5.0
+	sFmt[15] = "{0}%"
 
 	; ids de opcoes por preencher: -1 (o id 0 e valido, por isso nao serve de "vazio")
 	int n = 0
@@ -414,6 +424,8 @@ Event OnPageReset(string a_page)
 		oHLColor = AddMenuOption(L("Highlight color", "Cor do realce"), ColorName(BetterLootingNative.GetInt("iHLColor", 0)))
 		AddToggleRange(14, 15)
 		sOpt[9] = AddSliderOption(L(sEN[9], sPT[9]), BetterLootingNative.GetInt(sKey[9], 800) as float, sFmt[9])
+		AddSliderRange(15, 15)
+		AddToggleRange(35, 35)
 		AddHeaderOption(L("Object types", "Tipos de objeto"))
 		AddToggleRange(16, 31)
 		AddHeaderOption(L("Area scan", "Varrimento por raio"))
@@ -651,6 +663,8 @@ Event OnOptionHighlight(int a_option)
 		SetInfoText(L("Where on the screen the window is anchored, horizontally.", "Ponto do ecra onde a janela fica ancorada, na horizontal."))
 	elseif a_option == oAnchorY
 		SetInfoText(L("Where on the screen the window is anchored, vertically.", "Ponto do ecra onde a janela fica ancorada, na vertical."))
+	elseif a_option == sOpt[15]
+		SetInfoText(L("How strong the colored glow is. If the glow looks too weak or too strong, adjust it here.", "Define quanto forte e o brilho colorido. Se estiver fraco ou forte demais, ajuste aqui."))
 	elseif a_option == oScanKey
 		SetInfoText(L("Hold this key to light up nearby objects and lootable corpses. Holding longer keeps refreshing the glow. A short tap still does its normal action.", "Mantenha esta tecla premida para realcar objetos e cadaveres com loot por perto. Manter mais tempo continua a refrescar o brilho. Um toque curto faz a acao normal."))
 	elseif a_option == oHLCorpseColor

@@ -27,6 +27,10 @@ namespace
 	const UInt32 kFirstLocalID = 0x801;
 	const int kOffFullAlphaTime = 0x40;		// edgeEffectFullAlphaTime dentro dos dados do EFSH
 	const int kOffEdgeColor = 0x38;			// edgeEffectColor (RGBA)
+	const int kOffFillKey = 0x10;			// preenchimento: chave de cor 1 (RGBA)
+	const int kOffFillPersistent = 0x20;	// preenchimento: razao de alfa persistente
+	const int kOffFillFullRatio = 0x54;		// preenchimento: razao de alfa total
+	const int kOffFlags = 0x00;				// bit 1 = "cinzento para cor" (usa a paleta, branca)
 	const float kCrosshairFullAlpha = 0.4f;
 
 	const UInt8 kPalette[kColors][3] = {
@@ -39,7 +43,7 @@ namespace
 
 	TESEffectShader	*g_shaders[kColors * kPerColor] = {};
 	bool			g_ready = false;
-	bool			g_canTuneTime = false;
+	bool			g_canTune = false;		// os deslocamentos dos dados do shader foram confirmados
 	UInt32			g_slot = 0;
 	bool			g_playFailed = false;
 
@@ -125,20 +129,53 @@ namespace
 		return (color < 0 || color >= kColors) ? 0 : color;
 	}
 
+	// ajusta os dados do shader antes de o aplicar (cor, forca, tempos): assim as opcoes do MCM
+	// fazem efeito logo e nao dependem so do que foi gravado no ESP
+	void TuneShader(TESEffectShader *shader, int color, float seconds)
+	{
+		UInt8 *d = shader->unk14.pad;
+		const UInt8 *rgb = kPalette[color];
+
+		// cor em todos os campos onde o shader original era branco/cinzento
+		d[kOffFillKey] = rgb[0]; d[kOffFillKey + 1] = rgb[1]; d[kOffFillKey + 2] = rgb[2]; d[kOffFillKey + 3] = 255;
+		d[kOffEdgeColor] = rgb[0]; d[kOffEdgeColor + 1] = rgb[1]; d[kOffEdgeColor + 2] = rgb[2]; d[kOffEdgeColor + 3] = 255;
+		const int extra[3] = { 0x10C, 0x138, 0x13C };
+		for (int k = 0; k < 3; ++k)
+		{
+			d[extra[k]] = rgb[0]; d[extra[k] + 1] = rgb[1]; d[extra[k] + 2] = rgb[2];
+		}
+
+		// paleta classica (branca) ou cor propria
+		UInt32 *flags = (UInt32 *)(d + kOffFlags);
+		if (Settings::bHLClassicPalette)
+			*flags |= 0x2;
+		else
+			*flags &= ~0x2u;
+
+		// forca do brilho de preenchimento
+		int percent = Settings::iHLFillPercent;
+		if (percent < 0) percent = 0;
+		if (percent > 100) percent = 100;
+		*(float *)(d + kOffFillFullRatio) = percent * 0.01f;
+		*(float *)(d + kOffFillPersistent) = 0.0f;
+
+		// tempo com alfa total
+		float fullAlpha = seconds - 0.4f;
+		if (fullAlpha < 0.01f)
+			fullAlpha = 0.01f;
+		*(float *)(d + kOffFullAlphaTime) = fullAlpha;
+	}
+
 	// aplica o brilho: slot 0-3 = mira, 4-31 = varrimento
 	void ApplyShader(TESObjectREFR *ref, int color, UInt32 slot, float seconds)
 	{
-		TESEffectShader *shader = g_shaders[ClampColor(color) * kPerColor + slot];
+		const int c = ClampColor(color);
+		TESEffectShader *shader = g_shaders[c * kPerColor + slot];
 		if (!shader)
 			return;
 
-		if (g_canTuneTime)
-		{
-			float fullAlpha = seconds - 0.4f;
-			if (fullAlpha < 0.01f)
-				fullAlpha = 0.01f;
-			*(float *)(shader->unk14.pad + kOffFullAlphaTime) = fullAlpha;
-		}
+		if (g_canTune)
+			TuneShader(shader, c, seconds);
 
 		CallPlay(shader, ref, seconds + 1.0f);
 	}
@@ -151,7 +188,7 @@ namespace
 		const FormType type = ref->baseForm->formType;
 
 		bool stealable = false;
-		if (type == FormType::Character || !PassesObjectFilters(ref, type, stealable))
+		if (ref->formType == FormType::Character || !PassesObjectFilters(ref, type, stealable))
 		{
 			if (Settings::bHLDebug)
 				_MESSAGE("Highlight: mira %08X tipo %d: ignorado", ref->formID, (int)type);
@@ -213,8 +250,8 @@ namespace
 			const float dz = ref->pos.z - pz;
 			const float d2 = dx * dx + dy * dy + dz * dz;
 
-			const FormType type = ref->baseForm->formType;
-			if (type == FormType::Character)
+			// um ator e uma referencia do tipo Character (o formulario base e um NPC)
+			if (ref->formType == FormType::Character)
 			{
 				if (!Settings::bHLCorpses || d2 > corpseR2 || !IsLootableCorpse(ref))
 					continue;
@@ -227,6 +264,7 @@ namespace
 				if (d2 > objectR2)
 					continue;
 
+				const FormType type = ref->baseForm->formType;
 				bool stealable = false;
 				if (!PassesObjectFilters(ref, type, stealable))
 					continue;
@@ -339,7 +377,7 @@ void Highlight::Init()
 		const bool timeOk = (fullTime > kCrosshairFullAlpha - 0.01f) && (fullTime < kCrosshairFullAlpha + 0.01f);
 		const bool colorOk = d[kOffEdgeColor] == kPalette[0][0] && d[kOffEdgeColor + 1] == kPalette[0][1] && d[kOffEdgeColor + 2] == kPalette[0][2];
 		_MESSAGE("Highlight: verificacao dos dados do shader: tempo %s, cor %s", timeOk ? "OK" : "DIFERENTE", colorOk ? "OK" : "DIFERENTE");
-		g_canTuneTime = timeOk;
+		g_canTune = timeOk && colorOk;
 	}
 
 	const SKSEPlugin *plugin = SKSEPlugin::GetSingleton();
@@ -402,6 +440,6 @@ void Highlight::OnScanKey(bool a_down, bool a_up, float a_heldSeconds, bool a_lo
 
 void Highlight::MarkSearched(TESObjectREFR *a_ref)
 {
-	if (a_ref && a_ref->baseForm && a_ref->baseForm->formType == FormType::Character)
+	if (a_ref && a_ref->formType == FormType::Character)
 		g_searched.insert(a_ref->formID);
 }
