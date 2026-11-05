@@ -11,6 +11,7 @@
 #include "Hooks.h"
 #include "LootMenu.h"
 #include "Settings.h"
+#include "Highlight.h"
 
 //========================================================
 // input patches
@@ -247,6 +248,10 @@ public:
 				ButtonEvent *btn = static_cast<ButtonEvent *>(cur);
 				const UInt32 key = btn->keyMask;
 
+				// varrimento: so observa a tecla (nao a consome), por isso o E continua a ativar normalmente
+				if (key == (UInt32)Settings::iHLScanKey && key != (UInt32)Settings::iKeyTakeAll && key != (UInt32)Settings::iKeySearch)
+					Highlight::OnScanKey(btn->IsDown(), btn->IsUp(), btn->timer, visible);
+
 				if (key == (UInt32)Settings::iKeyTakeAll)
 				{
 					if (visible && btn->IsDown())
@@ -280,6 +285,7 @@ public:
 						if (!s_searchDone && reached)
 						{
 							s_searchDone = true;
+							Highlight::MarkSearched(lootMenu->GetContainerRef());
 							PlayerCharacterEx::OpenContainer();
 						}
 

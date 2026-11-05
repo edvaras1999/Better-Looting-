@@ -44,6 +44,17 @@ bool	Settings::bHLRedStealable = true;
 bool	Settings::bHLIgnoreUnnamed = true;
 int		Settings::iHLColor = 0;
 int		Settings::iHLCrosshairMs = 800;
+bool	Settings::bHLDebug = false;
+bool	Settings::bHLScanEnabled = true;
+int		Settings::iHLScanKey = 18;			// E
+int		Settings::iHLScanHoldMs = 500;
+int		Settings::iHLScanRadius = 1500;
+int		Settings::iHLScanMs = 3000;
+int		Settings::iHLScanMax = 64;
+bool	Settings::bHLCorpses = true;
+bool	Settings::bHLCorpseHideSearched = true;
+int		Settings::iHLCorpseColor = 2;		// verde
+int		Settings::iHLCorpseMaxDist = 2000;
 bool	Settings::bHLActivator = true;
 bool	Settings::bHLTalkingActivator = true;
 bool	Settings::bHLContainer = true;
@@ -114,6 +125,17 @@ namespace
 		{ "bHLRedStealable",		&Settings::bHLRedStealable,			true,	1, 0, 1 },
 		{ "bHLIgnoreUnnamed",		&Settings::bHLIgnoreUnnamed,			true,	1, 0, 1 },
 		{ "iHLColor",				&Settings::iHLColor,				false,	0, 0, 4 },
+		{ "bHLDebug",				&Settings::bHLDebug,				true,	0, 0, 1 },
+		{ "bHLScanEnabled",			&Settings::bHLScanEnabled,			true,	1, 0, 1 },
+		{ "iHLScanKey",				&Settings::iHLScanKey,				false,	18, 1, 255 },
+		{ "iHLScanHoldMs",			&Settings::iHLScanHoldMs,			false,	500, 0, 2000 },
+		{ "iHLScanRadius",			&Settings::iHLScanRadius,			false,	1500, 300, 5000 },
+		{ "iHLScanMs",				&Settings::iHLScanMs,				false,	3000, 500, 10000 },
+		{ "iHLScanMax",				&Settings::iHLScanMax,				false,	64, 8, 128 },
+		{ "bHLCorpses",				&Settings::bHLCorpses,				true,	1, 0, 1 },
+		{ "bHLCorpseHideSearched",	&Settings::bHLCorpseHideSearched,	true,	1, 0, 1 },
+		{ "iHLCorpseColor",			&Settings::iHLCorpseColor,			false,	2, 0, 4 },
+		{ "iHLCorpseMaxDist",		&Settings::iHLCorpseMaxDist,			false,	2000, 500, 5000 },
 		{ "iHLCrosshairMs",			&Settings::iHLCrosshairMs,			false,	800, 100, 10000 },
 		{ "bHLActivator",			&Settings::bHLActivator,			true,	1, 0, 1 },
 		{ "bHLTalkingActivator",			&Settings::bHLTalkingActivator,			true,	1, 0, 1 },

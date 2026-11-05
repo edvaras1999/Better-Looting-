@@ -51,6 +51,7 @@ public:
 	bool IsOpen() const;
 	bool IsVisible() const;
 	bool IsDisabled() const				{ return m_bDisabled; }
+	TESObjectREFR * GetContainerRef() const	{ return m_containerRef; }
 	void SetDisabled(bool disabled)		{ m_bDisabled = disabled; }
 	const char * GetMcRoot()			{ return m_mcRoot; }
 

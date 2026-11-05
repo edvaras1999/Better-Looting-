@@ -1,5 +1,6 @@
 ﻿#include "LootMenu.h"
 #include "Settings.h"
+#include "Highlight.h"
 #include <SKSE/PluginAPI.h>
 #include <SKSE/DebugLog.h>
 #include <SKSE/GameRTTI.h>
@@ -1011,6 +1012,9 @@ void LootMenu::TakeItem(bool a_all)
 		return;
 
 	m_bNowTaking = true;
+
+	// um cadaver de que se pegou algo conta como revistado (deixa de ser realcado)
+	Highlight::MarkSearched(m_containerRef);
 
 	auto it = m_items.begin() + m_selectedIndex;
 	InventoryEntryData *item = it->pEntry;

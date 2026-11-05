@@ -4,7 +4,7 @@ Plugin SKSE (1.7.3) para Skyrim LE que junta, num unico plugin, o menu de loot d
 (com o visual do QuickLoot Redesigned), o realce de objetos (Highlight Objects) e a
 sobrevivencia (EatingSleepingDrinking), com os patches de animacao.
 
-Estado: **v0.5** - menu de loot completo (com peso do jogador), MCM, dois visuais, ordenacao e realce de objetos na mira. O plugin parte do codigo do
+Estado: **v0.6** - menu de loot completo (com peso do jogador), MCM, dois visuais, ordenacao, realce de objetos na mira, varrimento por raio e cadaveres com loot. O plugin parte do codigo do
 QuickLoot 1.1f (LE) e fala o protocolo do `LootMenuIE.swf` do QuickLootIE.
 
 ## Teclas (menu de loot aberto)
@@ -29,7 +29,13 @@ Cor e duracao configuraveis; o que seria roubo fica a vermelho; filtro por tipo 
 contentores, portas, flora, mobilia, armaduras, armas, municao, livros, ingredientes, chaves, misc, pocoes,
 pergaminhos, gemas de alma). Os shaders vivem no `BetterLooting.esp` (gerado por `tools/make_esp.py` a partir
 dos dados do Highlight Objects EdgeLight Edition). O contorno em D3D11 do original nao existe no LE.
-Proximo: varrimento por raio com tecla e cadaveres lootaveis.
+
+**Varrimento por raio:** mantendo o **E** premido (500 ms por omissao; tecla e tempo no MCM) realca os objetos
+a volta (raio 1500, 3 s) e tambem os **cadaveres com loot** (verde por omissao). Manter premido refresca o brilho.
+So com o menu de loot fechado; um toque curto em E continua a ativar normalmente. Cadaveres de que se pegou
+algo (ou abertos com Procurar) deixam de ser realcados, nesta sessao de jogo.
+Ainda por fazer: filtros de valor dos cadaveres (itens de missao, chaves, equipamento encantado, valor minimo,
+livros, consumiveis) e realce permanente dos cadaveres.
 
 ## Configuracao
 

@@ -57,6 +57,10 @@ def grup(label, recs):
 
 def shader_data(rgb, slot):
     d = bytearray(BASE_DATA)
+    # O original pinta o brilho pela textura de paleta (bit 1 = "cinzento para cor"), que e branca/cinzenta.
+    # Com esse bit desligado, o brilho usa as cores definidas abaixo.
+    flags = struct.unpack_from('<I', d, 0)[0] & ~0x2
+    struct.pack_into('<I', d, 0, flags)
     r, g, b = rgb
     d[0x10:0x14] = bytes((r, g, b, 20))                       # preenchimento: cor 1 (alfa 20)
     struct.pack_into('<f', d, 0x20, 0.01)                     # preenchimento: razao de alfa persistente

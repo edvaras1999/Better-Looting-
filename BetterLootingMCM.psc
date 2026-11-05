@@ -27,6 +27,8 @@ int oAnchorX
 int oAnchorY
 int oSortBy
 int oHLColor
+int oHLCorpseColor
+int oScanKey
 int oKeyAll
 int oKeySearch
 
@@ -61,10 +63,10 @@ string Function L(string en, string pt)
 EndFunction
 
 Function BuildTables()
-	tKey = new string[32]
-	tEN = new string[32]
-	tPT = new string[32]
-	tOpt = new int[32]
+	tKey = new string[35]
+	tEN = new string[35]
+	tPT = new string[35]
+	tOpt = new int[35]
 	tKey[0] = "bDisableInCombat"
 	tEN[0] = "Disable in combat"
 	tPT[0] = "Desativar em combate"
@@ -161,15 +163,24 @@ Function BuildTables()
 	tKey[31] = "bHLSoulGem"
 	tEN[31] = "Soul gems"
 	tPT[31] = "Gemas de alma"
+	tKey[32] = "bHLScanEnabled"
+	tEN[32] = "Area scan (hold the key)"
+	tPT[32] = "Varrimento por raio (manter a tecla)"
+	tKey[33] = "bHLCorpses"
+	tEN[33] = "Scan also highlights lootable corpses"
+	tPT[33] = "O varrimento realca tambem cadaveres com loot"
+	tKey[34] = "bHLCorpseHideSearched"
+	tEN[34] = "Hide corpses already searched"
+	tPT[34] = "Esconder cadaveres ja revistados"
 
-	sKey = new string[10]
-	sEN = new string[10]
-	sPT = new string[10]
-	sMin = new float[10]
-	sMax = new float[10]
-	sStep = new float[10]
-	sFmt = new string[10]
-	sOpt = new int[10]
+	sKey = new string[15]
+	sEN = new string[15]
+	sPT = new string[15]
+	sMin = new float[15]
+	sMax = new float[15]
+	sStep = new float[15]
+	sFmt = new string[15]
+	sOpt = new int[15]
 	sKey[0] = "iScale"
 	sEN[0] = "Window scale"
 	sPT[0] = "Escala da janela"
@@ -240,6 +251,41 @@ Function BuildTables()
 	sMax[9] = 10000.0
 	sStep[9] = 100.0
 	sFmt[9] = "{0} ms"
+	sKey[10] = "iHLScanHoldMs"
+	sEN[10] = "Scan: time to hold the key (0 = one tap)"
+	sPT[10] = "Varrimento: tempo a manter a tecla (0 = um toque)"
+	sMin[10] = 0.0
+	sMax[10] = 2000.0
+	sStep[10] = 50.0
+	sFmt[10] = "{0} ms"
+	sKey[11] = "iHLScanRadius"
+	sEN[11] = "Scan radius"
+	sPT[11] = "Raio do varrimento"
+	sMin[11] = 300.0
+	sMax[11] = 5000.0
+	sStep[11] = 100.0
+	sFmt[11] = "{0}"
+	sKey[12] = "iHLScanMs"
+	sEN[12] = "Scan glow duration"
+	sPT[12] = "Duracao do brilho do varrimento"
+	sMin[12] = 500.0
+	sMax[12] = 10000.0
+	sStep[12] = 500.0
+	sFmt[12] = "{0} ms"
+	sKey[13] = "iHLScanMax"
+	sEN[13] = "Maximum objects per scan"
+	sPT[13] = "Maximo de objetos por varrimento"
+	sMin[13] = 8.0
+	sMax[13] = 128.0
+	sStep[13] = 8.0
+	sFmt[13] = "{0}"
+	sKey[14] = "iHLCorpseMaxDist"
+	sEN[14] = "Corpse highlight distance"
+	sPT[14] = "Distancia do realce de cadaveres"
+	sMin[14] = 500.0
+	sMax[14] = 5000.0
+	sStep[14] = 100.0
+	sFmt[14] = "{0}"
 
 	; ids de opcoes por preencher: -1 (o id 0 e valido, por isso nao serve de "vazio")
 	int n = 0
@@ -258,6 +304,8 @@ Function BuildTables()
 	oAnchorY = -1
 	oSortBy = -1
 	oHLColor = -1
+	oHLCorpseColor = -1
+	oScanKey = -1
 	oKeyAll = -1
 	oKeySearch = -1
 EndFunction
@@ -368,6 +416,14 @@ Event OnPageReset(string a_page)
 		sOpt[9] = AddSliderOption(L(sEN[9], sPT[9]), BetterLootingNative.GetInt(sKey[9], 800) as float, sFmt[9])
 		AddHeaderOption(L("Object types", "Tipos de objeto"))
 		AddToggleRange(16, 31)
+		AddHeaderOption(L("Area scan", "Varrimento por raio"))
+		AddToggleRange(32, 32)
+		oScanKey = AddKeyMapOption(L("Scan key (hold)", "Tecla do varrimento (manter)"), BetterLootingNative.GetInt("iHLScanKey", 18))
+		AddSliderRange(10, 13)
+		AddHeaderOption(L("Lootable corpses", "Cadaveres com loot"))
+		AddToggleRange(33, 34)
+		oHLCorpseColor = AddMenuOption(L("Corpse color", "Cor dos cadaveres"), ColorName(BetterLootingNative.GetInt("iHLCorpseColor", 2)))
+		AddSliderRange(14, 14)
 	elseif a_page == Pages[2]
 		AddHeaderOption(L("Keys (loot menu open)", "Teclas (menu de loot aberto)"))
 		oKeyAll = AddKeyMapOption(L("Take all", "Pegar tudo"), BetterLootingNative.GetInt("iKeyTakeAll", 46))
@@ -441,6 +497,11 @@ Event OnOptionDefault(int a_option)
 	elseif a_option == oHLColor
 		BetterLootingNative.SetInt("iHLColor", 0)
 		SetMenuOptionValue(a_option, ColorName(0))
+	elseif a_option == oHLCorpseColor
+		BetterLootingNative.SetInt("iHLCorpseColor", 2)
+		SetMenuOptionValue(a_option, ColorName(2))
+	elseif a_option == oScanKey
+		SetKey("iHLScanKey", a_option, 0)
 	elseif a_option == oVisual
 		BetterLootingNative.SetInt("iVisual", 0)
 		BetterLootingNative.ApplyVisual()
@@ -496,6 +557,15 @@ Event OnOptionMenuOpen(int a_option)
 		opts[1] = AnchorYName(1)
 		opts[2] = AnchorYName(2)
 		cur = BetterLootingNative.GetInt("iAnchorY", 0)
+	elseif a_option == oHLCorpseColor
+		opts = new string[5]
+		opts[0] = ColorName(0)
+		opts[1] = ColorName(1)
+		opts[2] = ColorName(2)
+		opts[3] = ColorName(3)
+		opts[4] = ColorName(4)
+		cur = BetterLootingNative.GetInt("iHLCorpseColor", 2)
+		dflt = 2
 	elseif a_option == oHLColor
 		opts = new string[5]
 		opts[0] = ColorName(0)
@@ -537,6 +607,9 @@ Event OnOptionMenuAccept(int a_option, int a_index)
 	elseif a_option == oAnchorY
 		BetterLootingNative.SetInt("iAnchorY", a_index)
 		SetMenuOptionValue(a_option, AnchorYName(a_index))
+	elseif a_option == oHLCorpseColor
+		BetterLootingNative.SetInt("iHLCorpseColor", a_index)
+		SetMenuOptionValue(a_option, ColorName(a_index))
 	elseif a_option == oHLColor
 		BetterLootingNative.SetInt("iHLColor", a_index)
 		SetMenuOptionValue(a_option, ColorName(a_index))
@@ -560,6 +633,8 @@ Event OnOptionKeyMapChange(int a_option, int a_keyCode, string a_conflictControl
 		SetKey("iKeyTakeAll", a_option, a_keyCode)
 	elseif a_option == oKeySearch
 		SetKey("iKeySearch", a_option, a_keyCode)
+	elseif a_option == oScanKey
+		SetKey("iHLScanKey", a_option, a_keyCode)
 	endif
 EndEvent
 
@@ -576,6 +651,10 @@ Event OnOptionHighlight(int a_option)
 		SetInfoText(L("Where on the screen the window is anchored, horizontally.", "Ponto do ecra onde a janela fica ancorada, na horizontal."))
 	elseif a_option == oAnchorY
 		SetInfoText(L("Where on the screen the window is anchored, vertically.", "Ponto do ecra onde a janela fica ancorada, na vertical."))
+	elseif a_option == oScanKey
+		SetInfoText(L("Hold this key to light up nearby objects and lootable corpses. Holding longer keeps refreshing the glow. A short tap still does its normal action.", "Mantenha esta tecla premida para realcar objetos e cadaveres com loot por perto. Manter mais tempo continua a refrescar o brilho. Um toque curto faz a acao normal."))
+	elseif a_option == oHLCorpseColor
+		SetInfoText(L("Color of the glow on lootable corpses.", "Cor do brilho nos cadaveres com loot."))
 	elseif a_option == oHLColor
 		SetInfoText(L("Color of the glow on the object you look at. What would be stealing uses red if that option is on.", "Cor do brilho no objeto para que olhas. O que seria roubo usa vermelho, se essa opcao estiver ligada."))
 	elseif a_option == oSortBy

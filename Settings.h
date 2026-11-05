@@ -54,6 +54,19 @@ struct Settings
 	static bool	bHLIgnoreUnnamed;
 	static int	iHLColor;			// 0 dourado, 1 branco, 2 verde, 3 ciano, 4 vermelho
 	static int	iHLCrosshairMs;		// duracao do realce na mira
+	static bool	bHLDebug;			// regista no log o que o realce decide para cada objeto na mira
+
+	// varrimento por raio (tecla premida) e cadaveres lootaveis
+	static bool	bHLScanEnabled;
+	static int	iHLScanKey;			// codigo DirectInput (E = 18)
+	static int	iHLScanHoldMs;		// tempo a manter a tecla premida
+	static int	iHLScanRadius;		// raio, em unidades do jogo
+	static int	iHLScanMs;			// duracao do brilho do varrimento
+	static int	iHLScanMax;			// maximo de objetos realcados por varrimento
+	static bool	bHLCorpses;			// o varrimento inclui cadaveres com loot
+	static bool	bHLCorpseHideSearched;
+	static int	iHLCorpseColor;
+	static int	iHLCorpseMaxDist;
 	static bool	bHLActivator;
 	static bool	bHLTalkingActivator;
 	static bool	bHLContainer;

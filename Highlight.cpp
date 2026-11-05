@@ -9,6 +9,10 @@
 #include <SKSE/SKSEEvents.h>
 #include <Skyrim/SkyrimVM.h>
 #include <Skyrim/FileIO/TESDataHandler.h>
+#include <Skyrim/FileIO/TES.h>
+#include <algorithm>
+#include <set>
+#include <vector>
 
 #include "Highlight.h"
 #include "Settings.h"
@@ -38,6 +42,9 @@ namespace
 	bool			g_canTuneTime = false;
 	UInt32			g_slot = 0;
 	bool			g_playFailed = false;
+
+	std::set<UInt32>	g_searched;		// cadaveres ja revistados (so nesta sessao)
+	UInt32				g_scanSlot = 0;
 
 	typedef _NativeFunction<TESEffectShader, void, TESObjectREFR *, float> PlayNative;
 
@@ -84,53 +91,204 @@ namespace
 		return false;
 	}
 
-	void OnCrosshair(TESObjectREFR *ref)
+	// filtros comuns a mira e ao varrimento (objetos que nao sao atores)
+	bool PassesObjectFilters(TESObjectREFR *ref, FormType type, bool &stealable)
 	{
-		if (!g_ready || !Settings::bHLEnabled || !ref || ref == g_thePlayer || !ref->baseForm)
-			return;
+		stealable = false;
 
 		if (ref->IsDeleted() || ref->IsDisabled())
-			return;
+			return false;
 
 		if ((*(const UInt32 *)&ref->flags) & TESObjectREFR::kFlag_Harvested)
-			return;
+			return false;
 
-		const FormType type = ref->baseForm->formType;
-		if (type == FormType::Character || !TypeEnabled(type))
-			return;
+		if (!TypeEnabled(type))
+			return false;
 
 		if (!ref->Is3DLoaded())
-			return;
+			return false;
 
 		if (Settings::bHLIgnoreUnnamed)
 		{
 			const char *name = ref->GetReferenceName();
 			if (!name || !name[0])
-				return;
+				return false;
 		}
 
 		// o que seria roubo fica a vermelho (portas nao)
-		const bool stealable = Settings::bHLRedStealable && type != FormType::Door && ref->IsOffLimits();
+		stealable = Settings::bHLRedStealable && type != FormType::Door && ref->IsOffLimits();
+		return true;
+	}
 
-		int color = stealable ? 4 : Settings::iHLColor;
-		if (color < 0 || color >= kColors)
-			color = 0;
+	int ClampColor(int color)
+	{
+		return (color < 0 || color >= kColors) ? 0 : color;
+	}
 
-		const UInt32 slot = (g_slot++) % kCrosshairSlots;
-		TESEffectShader *shader = g_shaders[color * kPerColor + slot];
+	// aplica o brilho: slot 0-3 = mira, 4-31 = varrimento
+	void ApplyShader(TESObjectREFR *ref, int color, UInt32 slot, float seconds)
+	{
+		TESEffectShader *shader = g_shaders[ClampColor(color) * kPerColor + slot];
 		if (!shader)
 			return;
 
-		const float duration = Settings::iHLCrosshairMs * 0.001f;
 		if (g_canTuneTime)
 		{
-			float fullAlpha = duration - 0.4f;
+			float fullAlpha = seconds - 0.4f;
 			if (fullAlpha < 0.01f)
 				fullAlpha = 0.01f;
 			*(float *)(shader->unk14.pad + kOffFullAlphaTime) = fullAlpha;
 		}
 
-		CallPlay(shader, ref, duration + 1.0f);
+		CallPlay(shader, ref, seconds + 1.0f);
+	}
+
+	void OnCrosshair(TESObjectREFR *ref)
+	{
+		if (!g_ready || !Settings::bHLEnabled || !ref || ref == g_thePlayer || !ref->baseForm)
+			return;
+
+		const FormType type = ref->baseForm->formType;
+
+		bool stealable = false;
+		if (type == FormType::Character || !PassesObjectFilters(ref, type, stealable))
+		{
+			if (Settings::bHLDebug)
+				_MESSAGE("Highlight: mira %08X tipo %d: ignorado", ref->formID, (int)type);
+			return;
+		}
+
+		const int color = stealable ? 4 : Settings::iHLColor;
+		const UInt32 slot = (g_slot++) % kCrosshairSlots;
+
+		if (Settings::bHLDebug)
+			_MESSAGE("Highlight: mira %08X tipo %d: cor %d, posicao %u", ref->formID, (int)type, color, slot);
+
+		ApplyShader(ref, color, slot, Settings::iHLCrosshairMs * 0.001f);
+	}
+
+	// cadaver com loot: morto, com 3D, com itens e (opcionalmente) ainda nao revistado
+	bool IsLootableCorpse(TESObjectREFR *ref)
+	{
+		Actor *actor = static_cast<Actor *>(ref);
+
+		if (!actor->IsDead(true) || actor->IsGhost())
+			return false;
+
+		if (ref->IsDeleted() || ref->IsDisabled() || !ref->Is3DLoaded())
+			return false;
+
+		if (Settings::bHLCorpseHideSearched && g_searched.find(ref->formID) != g_searched.end())
+			return false;
+
+		// sem itens nao ha o que levar (nao cria o contentor, so conta)
+		return ref->GetNumItems(false, false) > 0;
+	}
+
+	struct Candidate
+	{
+		TESObjectREFR	*ref;
+		float			dist2;
+		bool			corpse;
+		bool			stealable;
+	};
+
+	void VisitCell(TESObjectCELL *cell, float px, float py, float pz, std::vector<Candidate> &out)
+	{
+		if (!cell)
+			return;
+
+		const float radius = (float)Settings::iHLScanRadius;
+		const float corpseRadius = (float)Settings::iHLCorpseMaxDist;
+		const float objectR2 = radius * radius;
+		const float corpseR2 = corpseRadius * corpseRadius;
+
+		for (TESObjectREFR *ref : cell->objectList)
+		{
+			if (!ref || ref == g_thePlayer || !ref->baseForm)
+				continue;
+
+			const float dx = ref->pos.x - px;
+			const float dy = ref->pos.y - py;
+			const float dz = ref->pos.z - pz;
+			const float d2 = dx * dx + dy * dy + dz * dz;
+
+			const FormType type = ref->baseForm->formType;
+			if (type == FormType::Character)
+			{
+				if (!Settings::bHLCorpses || d2 > corpseR2 || !IsLootableCorpse(ref))
+					continue;
+
+				Candidate c = { ref, d2, true, false };
+				out.push_back(c);
+			}
+			else
+			{
+				if (d2 > objectR2)
+					continue;
+
+				bool stealable = false;
+				if (!PassesObjectFilters(ref, type, stealable))
+					continue;
+
+				Candidate c = { ref, d2, false, stealable };
+				out.push_back(c);
+			}
+		}
+	}
+
+	bool CandidateCloser(const Candidate &a, const Candidate &b)
+	{
+		return a.dist2 < b.dist2;
+	}
+
+	// varre as celulas carregadas a volta do jogador e realca o que encontra
+	void Scan()
+	{
+		if (!g_ready || !Settings::bHLEnabled || !Settings::bHLScanEnabled || !g_thePlayer || !g_thePlayer->parentCell)
+			return;
+
+		const float px = g_thePlayer->pos.x;
+		const float py = g_thePlayer->pos.y;
+		const float pz = g_thePlayer->pos.z;
+
+		std::vector<Candidate> found;
+		found.reserve(256);
+
+		TESObjectCELL *playerCell = g_thePlayer->parentCell;
+		if (playerCell->IsInterior() || !g_TES || !g_TES->gridCellArray)
+		{
+			VisitCell(playerCell, px, py, pz, found);
+		}
+		else
+		{
+			GridCellArray *grid = g_TES->gridCellArray;
+			for (UInt32 y = 0; y < grid->size; ++y)
+			{
+				for (UInt32 x = 0; x < grid->size; ++x)
+					VisitCell(grid->Get(x, y), px, py, pz, found);
+			}
+		}
+
+		std::sort(found.begin(), found.end(), CandidateCloser);
+
+		size_t limit = (size_t)Settings::iHLScanMax;
+		if (found.size() < limit)
+			limit = found.size();
+
+		const float seconds = Settings::iHLScanMs * 0.001f;
+		const UInt32 scanSlots = kPerColor - kCrosshairSlots;
+
+		for (size_t i = 0; i < limit; ++i)
+		{
+			const Candidate &c = found[i];
+			const int color = c.corpse ? Settings::iHLCorpseColor : (c.stealable ? 4 : Settings::iHLColor);
+			const UInt32 slot = kCrosshairSlots + (g_scanSlot++ % scanSlots);
+			ApplyShader(c.ref, color, slot, seconds);
+		}
+
+		if (Settings::bHLDebug)
+			_MESSAGE("Highlight: varrimento: %u candidatos, %u realcados", (unsigned)found.size(), (unsigned)limit);
 	}
 
 	class CrosshairSink : public BSTEventSink<SKSECrosshairRefEvent>
@@ -196,4 +354,54 @@ void Highlight::Init()
 	source->AddEventSink(&g_crosshairSink);
 	g_ready = true;
 	_MESSAGE("Highlight: pronto");
+}
+
+
+void Highlight::OnScanKey(bool a_down, bool a_up, float a_heldSeconds, bool a_lootMenuVisible)
+{
+	static bool s_active = false;
+	static float s_nextAt = 0.0f;
+
+	if (!g_ready || !Settings::bHLEnabled || !Settings::bHLScanEnabled)
+	{
+		s_active = false;
+		return;
+	}
+
+	// com o menu de loot aberto o E pega itens: nao ha varrimento
+	if (a_lootMenuVisible)
+	{
+		s_active = false;
+		return;
+	}
+
+	if (a_down)
+	{
+		s_active = true;
+		s_nextAt = Settings::iHLScanHoldMs * 0.001f;
+	}
+
+	if (a_up)
+	{
+		s_active = false;
+		return;
+	}
+
+	if (!s_active || a_heldSeconds < s_nextAt)
+		return;
+
+	Scan();
+
+	// mantido premido: refresca antes de o brilho acabar
+	float interval = Settings::iHLScanMs * 0.001f - 0.8f;
+	if (interval < 0.5f)
+		interval = 0.5f;
+	s_nextAt = a_heldSeconds + interval;
+}
+
+
+void Highlight::MarkSearched(TESObjectREFR *a_ref)
+{
+	if (a_ref && a_ref->baseForm && a_ref->baseForm->formType == FormType::Character)
+		g_searched.insert(a_ref->formID);
 }
