@@ -376,22 +376,33 @@ void Highlight::Init()
 	// as texturas do brilho (paletas de cor e preenchimentos) tem de estar em Data\\Textures\\Effects\\Gradients;
 	// sem elas o jogo carrega os shaders mas o brilho nao aparece
 	{
-		const char *names[] = { "Gold", "White", "Green", "Cyan", "Red", "Fill0", "Fill1", "Fill2", "Fill3", "Fill4" };
+		const char *colors[] = { "Gold", "White", "Green", "Cyan", "Red" };
 		int missing = 0;
-		for (size_t n = 0; n < sizeof(names) / sizeof(names[0]); ++n)
+		int total = 0;
+		for (int level = 0; level <= kLevels; ++level)
 		{
-			char path[MAX_PATH];
-			sprintf_s(path, "Data\\Textures\\Effects\\Gradients\\BetterLooting_%s.dds", names[n]);
-			if (GetFileAttributesA(path) == INVALID_FILE_ATTRIBUTES)
+			// level == kLevels: a textura de preenchimento
+			const int count = (level < kLevels) ? kColors : 1;
+			for (int n = 0; n < count; ++n)
 			{
-				++missing;
-				_MESSAGE("AVISO: textura em falta: %s", path);
+				char path[MAX_PATH];
+				if (level < kLevels)
+					sprintf_s(path, "Data\\Textures\\Effects\\Gradients\\BetterLooting_%s_L%d.dds", colors[n], level);
+				else
+					sprintf_s(path, "Data\\Textures\\Effects\\Gradients\\BetterLooting_Fill0.dds");
+
+				++total;
+				if (GetFileAttributesA(path) == INVALID_FILE_ATTRIBUTES)
+				{
+					++missing;
+					_MESSAGE("AVISO: textura em falta: %s", path);
+				}
 			}
 		}
 		if (missing)
-			_MESSAGE("Highlight: faltam %d de 10 texturas; o brilho nao vai aparecer (instale a pasta Textures do pacote)", missing);
+			_MESSAGE("Highlight: faltam %d de %d texturas; o brilho nao vai aparecer (instale a pasta Textures do pacote)", missing, total);
 		else
-			_MESSAGE("Highlight: as 10 texturas do brilho existem");
+			_MESSAGE("Highlight: as %d texturas do brilho existem", total);
 	}
 
 	// verificacao: os dados do shader em memoria batem certo com o que o ESP gravou?

@@ -660,7 +660,7 @@ Event OnOptionHighlight(int a_option)
 	elseif a_option == oAnchorY
 		SetInfoText(L("Where on the screen the window is anchored, vertically.", "Ponto do ecra onde a janela fica ancorada, na vertical."))
 	elseif a_option == sOpt[15]
-		SetInfoText(L("How strong the glow is. It applies in 5 steps (100, 70, 45, 25 and 10%). Lower it to see the details of the objects.", "Quao forte e o brilho. Aplica-se em 5 niveis (100, 70, 45, 25 e 10%). Reduza para ver os detalhes dos objetos."))
+		SetInfoText(L("How strong the glow is. It applies in 5 steps (100, 60, 35, 18 and 8%). Lower it to see the details of the objects.", "Quao forte e o brilho. Aplica-se em 5 niveis (100, 60, 35, 18 e 8%). Reduza para ver os detalhes dos objetos."))
 	elseif a_option == oScanKey
 		SetKey("iHLScanKey", a_option, 0)
 	elseif a_option == oVisual

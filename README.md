@@ -4,7 +4,7 @@ Plugin SKSE (1.7.3) para Skyrim LE que junta, num unico plugin, o menu de loot d
 (com o visual do QuickLoot Redesigned), o realce de objetos (Highlight Objects) e a
 sobrevivencia (EatingSleepingDrinking), com os patches de animacao.
 
-Estado: **v0.9** - menu de loot completo (com peso do jogador), MCM, dois visuais, ordenacao, realce de objetos na mira, varrimento por raio e cadaveres com loot. O plugin parte do codigo do
+Estado: **v0.11** - menu de loot completo (com peso do jogador), MCM, dois visuais, ordenacao, realce de objetos na mira, varrimento por raio e cadaveres com loot. O plugin parte do codigo do
 QuickLoot 1.1f (LE) e fala o protocolo do `LootMenuIE.swf` do QuickLootIE.
 
 ## Teclas (menu de loot aberto)
@@ -28,11 +28,13 @@ O objeto para que olhas ganha um brilho (efeito de shader do jogo, aplicado pela
 Cor e duracao configuraveis; o que seria roubo fica a vermelho; filtro por tipo de objeto (ativadores,
 contentores, portas, flora, mobilia, armaduras, armas, municao, livros, ingredientes, chaves, misc, pocoes,
 pergaminhos, gemas de alma). Os shaders vivem no `BetterLooting.esp` (gerado por `tools/make_esp.py` a partir
-dos dados do Highlight Objects EdgeLight Edition). A cor do brilho vem de 5 paletas (`dist/Data/Textures/Effects/Gradients/BetterLooting_<cor>.dds`,
-geradas tambem pelo `make_esp.py`). O contorno em D3D11 do original nao existe no LE.
+dos dados do Highlight Objects EdgeLight Edition). A cor e a intensidade do brilho vem de paletas de cor solida, uma por cor e por nivel
+(`dist/Data/Textures/Effects/Gradients/BetterLooting_<cor>_L<nivel>.dds`, geradas pelo `make_esp.py`). O shader mistura por
+adicao e ignora o alfa, por isso a intensidade e a luminosidade da cor (100, 60, 35, 18 e 8%). O jogo nao le alteracoes aos
+dados do shader depois de carregado, por isso cada nivel e cada cor tem os seus shaders no ESP. O contorno em D3D11 do original nao existe no LE.
 
 **Varrimento por raio:** mantendo o **E** premido (500 ms por omissao; tecla e tempo no MCM) realca os objetos
-a volta (raio 1500, 3 s) e tambem os **cadaveres com loot** (verde por omissao). Manter premido refresca o brilho.
+a volta (raio 1500, 3 s; funciona mesmo com o realce na mira desligado) e tambem os **cadaveres com loot** (verde por omissao). Manter premido refresca o brilho.
 So com o menu de loot fechado; um toque curto em E continua a ativar normalmente. Cadaveres de que se pegou
 algo (ou abertos com Procurar) deixam de ser realcados, nesta sessao de jogo.
 Ainda por fazer: filtros de valor dos cadaveres (itens de missao, chaves, equipamento encantado, valor minimo,
@@ -46,3 +48,27 @@ livros, consumiveis) e realce permanente dos cadaveres.
   menu de loot abre (o menu e recriado).
 - `BetterLooting.ini` fica ao lado da DLL (`Data/SKSE/Plugins`) e tem uma seccao `[Settings]`.
 
+## Estrutura
+
+- `betterlooting/` - codigo C++ do plugin e o projeto Visual Studio
+- `papyrus/src` - scripts (`BetterLootingNative.psc`, `BetterLootingMCM.psc`); `papyrus/stubs` so serve para compilar
+- `tools/make_esp.py` - gera `BetterLooting.esp` (so a quest do MCM) e o `.seq`
+- `dist/Data/` - ficheiros de dados que vao no pacote (SWFs, INI, ESP, SEQ)
+- `third_party/` - **coloque aqui** `Quick_Loot_1_1f_Source_Files__for_modders_-73096-1-1f.7z`
+  (a libSkyrim usada para compilar; o workflow extrai-o e compila-o)
+- `.github/workflows/build.yml` - compila no GitHub Actions e gera o artefacto
+  `BetterLooting-instalacao`
+
+## Como testar
+
+1. Faca upload dos ficheiros para o repositorio (podem ir soltos na raiz: o workflow arruma-os).
+2. Na aba Actions, abra a execucao e baixe `BetterLooting-instalacao`.
+3. Instale com o MO2, deixe o `BetterLooting.esp` ativo e **desative o QuickLoot 1.1f**
+   (QuickLoot.dll, QuickLoot.ini, LootMenu.swf).
+4. No log do SKSE (`BetterLooting.log`) procure `Funcoes Papyrus registadas` e
+   `LootMenuIE.swf: nivel de funcoes = 6` (o nome da linha e o mesmo para os dois visuais).
+
+## Licencas
+
+O codigo parte de QuickLoot 1.1f e QuickLootIE (GPL-3.0-or-later). Os autores originais deram
+permissao desde que o resultado seja para Skyrim LE ou VR.

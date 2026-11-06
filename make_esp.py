@@ -7,8 +7,10 @@
    - 300 efeitos de shader (EFSH) para o realce de objetos (formas 0x801 a 0x92C):
        forma = 0x801 + (nivel * 5 + cor) * 12 + posicao ; 5 niveis de intensidade x 5 cores x 12 posicoes
        posicoes 0 a 3 = realce na mira (rodam) ; 4 a 11 = varrimento por raio
-     A intensidade esta gravada em cada shader (textura de preenchimento cinzenta + alfa), porque o jogo
-     nao le alteracoes feitas aos dados do shader depois de carregado.
+     O shader mistura por ADICAO (origem = alfa, destino = um) e ignora o alfa da textura (bit 6 das flags),
+     por isso a intensidade do brilho e a luminosidade da cor: cada nivel tem a sua paleta, com a cor
+     multiplicada por um fator (100, 60, 35, 18 e 8%). O jogo nao le alteracoes feitas aos dados do shader
+     depois de carregado, por isso os niveis estao gravados em shaders e paletas separados.
      Os dados de base (BASE_DATA) vem do HighlightObjects.esp do Highlight Objects (EdgeLight Edition);
      aqui aplicam-se os mesmos valores que esse mod definia em tempo de execucao, ja gravados no ESP."""
 import os
@@ -33,14 +35,14 @@ COLORS = [('Gold', (255, 215, 0)), ('White', (255, 255, 255)), ('Green', (0, 255
 SLOTS = 12
 CROSSHAIR_SLOTS = 4
 # (percentagem, alfa) por nivel de intensidade
-LEVELS = [(100, 255), (70, 178), (45, 115), (25, 64), (10, 26)]
+LEVELS = [(100, 255), (60, 153), (35, 89), (18, 46), (8, 20)]
 FORM_VERSION = 43
 
 
-def palette_dds(rgb):
+def palette_dds(rgb, factor=1.0):
     """DDS (DXT1, 256x4) de cor solida: a textura de paleta do shader passa a dar a cor escolhida.
     Com o bit "cinzento para cor" ligado, a cor do brilho vem desta paleta e nao das chaves de cor."""
-    r, g, b = rgb
+    r, g, b = (int(round(c * factor)) for c in rgb)
     c565 = ((r >> 3) << 11) | ((g >> 2) << 5) | (b >> 3)
     width, height = 256, 4
     data = struct.pack('<HHI', c565, c565, 0) * ((width // 4) * (height // 4))
@@ -120,10 +122,10 @@ for li, (percent, alpha) in enumerate(LEVELS):
             form_id = OWN | (FIRST_EFSH + (li * len(COLORS) + ci) * SLOTS + slot)
             efsh.append(rec('EFSH', form_id, [
                 sub('EDID', z('BetterLooting_FX_L%d_%s_%02d' % (li, cname, slot))),
-                sub('ICON', (u'Effects\\Gradients\\BetterLooting_Fill%d.dds' % li).encode('latin1') + b'\x00'),
+                sub('ICON', u'Effects\\Gradients\\BetterLooting_Fill0.dds'.encode('latin1') + b'\x00'),
                 sub('ICO2', b'\x00'),
                 sub('NAM7', b'\x00'),
-                sub('NAM8', (u'Effects\\Gradients\\BetterLooting_%s.dds' % cname).encode('latin1') + b'\x00'),
+                sub('NAM8', (u'Effects\\Gradients\\BetterLooting_%s_L%d.dds' % (cname, li)).encode('latin1') + b'\x00'),
                 sub('NAM9', b'\x00'),
                 sub('DATA', shader_data(rgb, slot, alpha)),
             ]))
@@ -148,10 +150,10 @@ with open(os.path.join(root, 'SEQ', 'BetterLooting.seq'), 'wb') as f:
     f.write(struct.pack('<I', ID_QUST))
 tex_dir = os.path.join(root, 'Textures', 'Effects', 'Gradients')
 os.makedirs(tex_dir, exist_ok=True)
-for cname, rgb in COLORS:
-    with open(os.path.join(tex_dir, 'BetterLooting_%s.dds' % cname), 'wb') as f:
-        f.write(palette_dds(rgb))
 for li, (percent, alpha) in enumerate(LEVELS):
-    with open(os.path.join(tex_dir, 'BetterLooting_Fill%d.dds' % li), 'wb') as f:
-        f.write(fill_dds(alpha))
+    for cname, rgb in COLORS:
+        with open(os.path.join(tex_dir, 'BetterLooting_%s_L%d.dds' % (cname, li)), 'wb') as f:
+            f.write(palette_dds(rgb, percent / 100.0))
+with open(os.path.join(tex_dir, 'BetterLooting_Fill0.dds'), 'wb') as f:
+    f.write(fill_dds(255))
 print('BetterLooting.esp: %d bytes, %d shaders; BetterLooting.seq: quest %08X' % (len(esp), len(efsh), ID_QUST))
