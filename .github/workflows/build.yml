@@ -303,6 +303,13 @@ jobs:
               Write-Host "Movido para a pasta certa: $name -> $($map[$name])"
             }
           }
+          # Qualquer BetterLooting_*.dds solto (paletas e preenchimentos do brilho) vai para a pasta das texturas.
+          foreach ($f in Get-ChildItem $ws -File -Filter 'BetterLooting_*.dds') {
+            $dir = Join-Path $ws 'dist\Data\Textures\Effects\Gradients'
+            New-Item -ItemType Directory -Force $dir | Out-Null
+            Move-Item $f.FullName (Join-Path $dir $f.Name) -Force
+            Write-Host "Movido para a pasta certa: $($f.Name) -> dist\Data\Textures\Effects\Gradients"
+          }
 
       - name: Baixar a DLL
         uses: actions/download-artifact@v4
