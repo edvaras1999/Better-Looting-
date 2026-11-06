@@ -45,6 +45,7 @@ bool	Settings::bHLIgnoreUnnamed = true;
 int		Settings::iHLColor = 0;
 int		Settings::iHLCrosshairMs = 800;
 int		Settings::iHLFillPercent = 15;
+int		Settings::iHLEdgePercent = 60;
 bool	Settings::bHLDebug = false;
 bool	Settings::bHLScanEnabled = true;
 int		Settings::iHLScanKey = 18;			// E
@@ -127,6 +128,7 @@ namespace
 		{ "bHLIgnoreUnnamed",		&Settings::bHLIgnoreUnnamed,			true,	1, 0, 1 },
 		{ "iHLColor",				&Settings::iHLColor,				false,	0, 0, 4 },
 		{ "iHLFillPercent",			&Settings::iHLFillPercent,			false,	15, 0, 100 },
+		{ "iHLEdgePercent",			&Settings::iHLEdgePercent,			false,	60, 0, 100 },
 		{ "bHLDebug",				&Settings::bHLDebug,				true,	0, 0, 1 },
 		{ "bHLScanEnabled",			&Settings::bHLScanEnabled,			true,	1, 0, 1 },
 		{ "iHLScanKey",				&Settings::iHLScanKey,				false,	18, 1, 255 },

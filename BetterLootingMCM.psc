@@ -173,14 +173,14 @@ Function BuildTables()
 	tEN[34] = "Hide corpses already searched"
 	tPT[34] = "Esconder cadaveres ja revistados"
 
-	sKey = new string[16]
-	sEN = new string[16]
-	sPT = new string[16]
-	sMin = new float[16]
-	sMax = new float[16]
-	sStep = new float[16]
-	sFmt = new string[16]
-	sOpt = new int[16]
+	sKey = new string[17]
+	sEN = new string[17]
+	sPT = new string[17]
+	sMin = new float[17]
+	sMax = new float[17]
+	sStep = new float[17]
+	sFmt = new string[17]
+	sOpt = new int[17]
 	sKey[0] = "iScale"
 	sEN[0] = "Window scale"
 	sPT[0] = "Escala da janela"
@@ -287,12 +287,19 @@ Function BuildTables()
 	sStep[14] = 100.0
 	sFmt[14] = "{0}"
 	sKey[15] = "iHLFillPercent"
-	sEN[15] = "Glow strength"
-	sPT[15] = "Forca do brilho"
+	sEN[15] = "Fill glow strength"
+	sPT[15] = "Forca do brilho de preenchimento"
 	sMin[15] = 0.0
 	sMax[15] = 100.0
 	sStep[15] = 5.0
 	sFmt[15] = "{0}%"
+	sKey[16] = "iHLEdgePercent"
+	sEN[16] = "Edge glow strength"
+	sPT[16] = "Forca do contorno luminoso"
+	sMin[16] = 0.0
+	sMax[16] = 100.0
+	sStep[16] = 5.0
+	sFmt[16] = "{0}%"
 
 	; ids de opcoes por preencher: -1 (o id 0 e valido, por isso nao serve de "vazio")
 	int n = 0
@@ -421,7 +428,7 @@ Event OnPageReset(string a_page)
 		oHLColor = AddMenuOption(L("Highlight color", "Cor do realce"), ColorName(BetterLootingNative.GetInt("iHLColor", 0)))
 		AddToggleRange(14, 15)
 		sOpt[9] = AddSliderOption(L(sEN[9], sPT[9]), BetterLootingNative.GetInt(sKey[9], 800) as float, sFmt[9])
-		AddSliderRange(15, 15)
+		AddSliderRange(15, 16)
 		AddHeaderOption(L("Object types", "Tipos de objeto"))
 		AddToggleRange(16, 31)
 		AddHeaderOption(L("Area scan", "Varrimento por raio"))
@@ -660,7 +667,9 @@ Event OnOptionHighlight(int a_option)
 	elseif a_option == oAnchorY
 		SetInfoText(L("Where on the screen the window is anchored, vertically.", "Ponto do ecra onde a janela fica ancorada, na vertical."))
 	elseif a_option == sOpt[15]
-		SetInfoText(L("How strong the colored glow is. If the glow looks too weak or too strong, adjust it here.", "Define quanto forte e o brilho colorido. Se estiver fraco ou forte demais, ajuste aqui."))
+		SetInfoText(L("Strength of the colored fill over the object. If changing it shows no difference, the edge glow is dominating: adjust the edge strength too.", "Forca do preenchimento colorido sobre o objeto. Se alterar nao mostrar diferenca, o contorno luminoso e que domina: ajuste tambem a forca do contorno."))
+	elseif a_option == sOpt[16]
+		SetInfoText(L("Strength of the glowing outline. Lower it if the glow is too bright.", "Forca do contorno luminoso. Reduza se o brilho estiver forte demais."))
 	elseif a_option == oScanKey
 		SetInfoText(L("Hold this key to light up nearby objects and lootable corpses. Holding longer keeps refreshing the glow. A short tap still does its normal action.", "Mantenha esta tecla premida para realcar objetos e cadaveres com loot por perto. Manter mais tempo continua a refrescar o brilho. Um toque curto faz a acao normal."))
 	elseif a_option == oHLCorpseColor

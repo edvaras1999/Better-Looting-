@@ -30,6 +30,7 @@ namespace
 	const int kOffFillKey = 0x10;			// preenchimento: chave de cor 1 (RGBA)
 	const int kOffFillPersistent = 0x20;	// preenchimento: razao de alfa persistente
 	const int kOffFillFullRatio = 0x54;		// preenchimento: razao de alfa total
+	const int kOffEdgeFullRatio = 0x58;		// contorno: razao de alfa total
 	const float kCrosshairFullAlpha = 0.4f;
 
 	const UInt8 kPalette[kColors][3] = {
@@ -150,6 +151,12 @@ namespace
 		if (percent > 100) percent = 100;
 		*(float *)(d + kOffFillFullRatio) = percent * 0.01f;
 		*(float *)(d + kOffFillPersistent) = 0.0f;
+
+		// forca do contorno luminoso (e muitas vezes ele que domina o brilho)
+		int edgePercent = Settings::iHLEdgePercent;
+		if (edgePercent < 0) edgePercent = 0;
+		if (edgePercent > 100) edgePercent = 100;
+		*(float *)(d + kOffEdgeFullRatio) = edgePercent * 0.01f;
 
 		// tempo com alfa total
 		float fullAlpha = seconds - 0.4f;

@@ -55,6 +55,7 @@ struct Settings
 	static int	iHLColor;			// 0 dourado, 1 branco, 2 verde, 3 ciano, 4 vermelho
 	static int	iHLCrosshairMs;		// duracao do realce na mira
 	static int	iHLFillPercent;		// forca do brilho de preenchimento (0 a 100)
+	static int	iHLEdgePercent;		// forca do contorno luminoso (0 a 100)
 	static bool	bHLDebug;			// regista no log o que o realce decide para cada objeto na mira
 
 	// varrimento por raio (tecla premida) e cadaveres lootaveis
