@@ -10,7 +10,9 @@
 #include <Skyrim/SkyrimVM.h>
 #include <Skyrim/FileIO/TESDataHandler.h>
 #include <Skyrim/FileIO/TES.h>
+#include <Windows.h>
 #include <algorithm>
+#include <cstdio>
 #include <set>
 #include <vector>
 
@@ -370,6 +372,27 @@ void Highlight::Init()
 	_MESSAGE("Highlight: %d de %d shaders encontrados (indice do ESP %02X)", found, kLevels * kColors * kSlots, modIndex);
 	if (found == 0)
 		return;
+
+	// as texturas do brilho (paletas de cor e preenchimentos) tem de estar em Data\\Textures\\Effects\\Gradients;
+	// sem elas o jogo carrega os shaders mas o brilho nao aparece
+	{
+		const char *names[] = { "Gold", "White", "Green", "Cyan", "Red", "Fill0", "Fill1", "Fill2", "Fill3", "Fill4" };
+		int missing = 0;
+		for (size_t n = 0; n < sizeof(names) / sizeof(names[0]); ++n)
+		{
+			char path[MAX_PATH];
+			sprintf_s(path, "Data\\Textures\\Effects\\Gradients\\BetterLooting_%s.dds", names[n]);
+			if (GetFileAttributesA(path) == INVALID_FILE_ATTRIBUTES)
+			{
+				++missing;
+				_MESSAGE("AVISO: textura em falta: %s", path);
+			}
+		}
+		if (missing)
+			_MESSAGE("Highlight: faltam %d de 10 texturas; o brilho nao vai aparecer (instale a pasta Textures do pacote)", missing);
+		else
+			_MESSAGE("Highlight: as 10 texturas do brilho existem");
+	}
 
 	// verificacao: os dados do shader em memoria batem certo com o que o ESP gravou?
 	TESEffectShader *probe = g_shaders[0];
