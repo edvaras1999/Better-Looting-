@@ -163,6 +163,7 @@ jobs:
             'make_esp.py' = 'tools'
             'BetterLooting_Gold.dds' = 'dist\Data\Textures\Effects\Gradients'; 'BetterLooting_White.dds' = 'dist\Data\Textures\Effects\Gradients'
             'BetterLooting_Green.dds' = 'dist\Data\Textures\Effects\Gradients'; 'BetterLooting_Cyan.dds' = 'dist\Data\Textures\Effects\Gradients'; 'BetterLooting_Red.dds' = 'dist\Data\Textures\Effects\Gradients'
+            'BetterLooting_Fill0.dds' = 'dist\Data\Textures\Effects\Gradients'; 'BetterLooting_Fill1.dds' = 'dist\Data\Textures\Effects\Gradients'; 'BetterLooting_Fill2.dds' = 'dist\Data\Textures\Effects\Gradients'; 'BetterLooting_Fill3.dds' = 'dist\Data\Textures\Effects\Gradients'; 'BetterLooting_Fill4.dds' = 'dist\Data\Textures\Effects\Gradients'
           }
           foreach ($name in $map.Keys) {
             $src = Join-Path $ws $name
@@ -291,6 +292,7 @@ jobs:
             'make_esp.py' = 'tools'
             'BetterLooting_Gold.dds' = 'dist\Data\Textures\Effects\Gradients'; 'BetterLooting_White.dds' = 'dist\Data\Textures\Effects\Gradients'
             'BetterLooting_Green.dds' = 'dist\Data\Textures\Effects\Gradients'; 'BetterLooting_Cyan.dds' = 'dist\Data\Textures\Effects\Gradients'; 'BetterLooting_Red.dds' = 'dist\Data\Textures\Effects\Gradients'
+            'BetterLooting_Fill0.dds' = 'dist\Data\Textures\Effects\Gradients'; 'BetterLooting_Fill1.dds' = 'dist\Data\Textures\Effects\Gradients'; 'BetterLooting_Fill2.dds' = 'dist\Data\Textures\Effects\Gradients'; 'BetterLooting_Fill3.dds' = 'dist\Data\Textures\Effects\Gradients'; 'BetterLooting_Fill4.dds' = 'dist\Data\Textures\Effects\Gradients'
           }
           foreach ($name in $map.Keys) {
             $src = Join-Path $ws $name
