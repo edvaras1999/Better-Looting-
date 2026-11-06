@@ -19,18 +19,16 @@
 
 namespace
 {
-	// Pool de shaders no BetterLooting.esp (ver tools/make_esp.py):
-	// forma = 0x801 + cor * 32 + posicao ; posicoes 0-3 = mira (rodam), 4-31 = varrimento (v0.6)
+	// Shaders no BetterLooting.esp (ver tools/make_esp.py):
+	// forma = 0x801 + (nivel * 5 + cor) * 12 + posicao ; posicoes 0-3 = mira (rodam), 4-11 = varrimento
+	// O nivel (0 = mais forte ... 4 = mais fraco) esta gravado em cada shader.
+	const int kLevels = 5;
 	const int kColors = 5;
-	const int kPerColor = 32;
+	const int kSlots = 12;
 	const int kCrosshairSlots = 4;
 	const UInt32 kFirstLocalID = 0x801;
 	const int kOffFullAlphaTime = 0x40;		// edgeEffectFullAlphaTime dentro dos dados do EFSH
 	const int kOffEdgeColor = 0x38;			// edgeEffectColor (RGBA)
-	const int kOffFillKey = 0x10;			// preenchimento: chave de cor 1 (RGBA)
-	const int kOffFillPersistent = 0x20;	// preenchimento: razao de alfa persistente
-	const int kOffFillFullRatio = 0x54;		// preenchimento: razao de alfa total
-	const int kOffEdgeFullRatio = 0x58;		// contorno: razao de alfa total
 	const float kCrosshairFullAlpha = 0.4f;
 
 	const UInt8 kPalette[kColors][3] = {
@@ -41,7 +39,7 @@ namespace
 		{ 255, 40, 40 }		// vermelho
 	};
 
-	TESEffectShader	*g_shaders[kColors * kPerColor] = {};
+	TESEffectShader	*g_shaders[kLevels * kColors * kSlots] = {};
 	bool			g_ready = false;
 	bool			g_canTune = false;		// os deslocamentos dos dados do shader foram confirmados
 	UInt32			g_slot = 0;
@@ -129,52 +127,39 @@ namespace
 		return (color < 0 || color >= kColors) ? 0 : color;
 	}
 
-	// ajusta os dados do shader antes de o aplicar (cor, forca, tempos): assim as opcoes do MCM
-	// fazem efeito logo e nao dependem so do que foi gravado no ESP
-	void TuneShader(TESEffectShader *shader, int color, float seconds)
+	// nivel de intensidade (0 = mais forte) a partir da definicao 0-100
+	int LevelFromPercent(int percent)
 	{
-		UInt8 *d = shader->unk14.pad;
-		const UInt8 *rgb = kPalette[color];
+		if (percent >= 85) return 0;
+		if (percent >= 58) return 1;
+		if (percent >= 35) return 2;
+		if (percent >= 17) return 3;
+		return 4;
+	}
 
-		// a cor do preenchimento vem da paleta BetterLooting_<cor>.dds; estas cores servem de reforco
-		d[kOffFillKey] = rgb[0]; d[kOffFillKey + 1] = rgb[1]; d[kOffFillKey + 2] = rgb[2]; d[kOffFillKey + 3] = 255;
-		d[kOffEdgeColor] = rgb[0]; d[kOffEdgeColor + 1] = rgb[1]; d[kOffEdgeColor + 2] = rgb[2]; d[kOffEdgeColor + 3] = 255;
-		const int extra[3] = { 0x10C, 0x138, 0x13C };
-		for (int k = 0; k < 3; ++k)
-		{
-			d[extra[k]] = rgb[0]; d[extra[k] + 1] = rgb[1]; d[extra[k] + 2] = rgb[2];
-		}
-
-		// forca do brilho de preenchimento
-		int percent = Settings::iHLFillPercent;
-		if (percent < 0) percent = 0;
-		if (percent > 100) percent = 100;
-		*(float *)(d + kOffFillFullRatio) = percent * 0.01f;
-		*(float *)(d + kOffFillPersistent) = 0.0f;
-
-		// forca do contorno luminoso (e muitas vezes ele que domina o brilho)
-		int edgePercent = Settings::iHLEdgePercent;
-		if (edgePercent < 0) edgePercent = 0;
-		if (edgePercent > 100) edgePercent = 100;
-		*(float *)(d + kOffEdgeFullRatio) = edgePercent * 0.01f;
-
-		// tempo com alfa total
+	// ajusta o tempo com alfa total antes de aplicar o shader
+	void TuneShader(TESEffectShader *shader, float seconds)
+	{
 		float fullAlpha = seconds - 0.4f;
 		if (fullAlpha < 0.01f)
 			fullAlpha = 0.01f;
-		*(float *)(d + kOffFullAlphaTime) = fullAlpha;
+		*(float *)(shader->unk14.pad + kOffFullAlphaTime) = fullAlpha;
 	}
 
-	// aplica o brilho: slot 0-3 = mira, 4-31 = varrimento
+	// aplica o brilho: slot 0-3 = mira, 4-11 = varrimento
 	void ApplyShader(TESObjectREFR *ref, int color, UInt32 slot, float seconds)
 	{
+		if (Settings::iHLFillPercent <= 0)
+			return;
+
+		const int level = LevelFromPercent(Settings::iHLFillPercent);
 		const int c = ClampColor(color);
-		TESEffectShader *shader = g_shaders[c * kPerColor + slot];
+		TESEffectShader *shader = g_shaders[(level * kColors + c) * kSlots + slot];
 		if (!shader)
 			return;
 
 		if (g_canTune)
-			TuneShader(shader, c, seconds);
+			TuneShader(shader, seconds);
 
 		CallPlay(shader, ref, seconds + 1.0f);
 	}
@@ -301,7 +286,7 @@ namespace
 	// varre as celulas carregadas a volta do jogador e realca o que encontra
 	void Scan()
 	{
-		if (!g_ready || !Settings::bHLEnabled || !Settings::bHLScanEnabled || !g_thePlayer || !g_thePlayer->parentCell)
+		if (!g_ready || !Settings::bHLScanEnabled || !g_thePlayer || !g_thePlayer->parentCell)
 			return;
 
 		const float px = g_thePlayer->pos.x;
@@ -333,7 +318,7 @@ namespace
 			limit = found.size();
 
 		const float seconds = Settings::iHLScanMs * 0.001f;
-		const UInt32 scanSlots = kPerColor - kCrosshairSlots;
+		const UInt32 scanSlots = kSlots - kCrosshairSlots;
 
 		for (size_t i = 0; i < limit; ++i)
 		{
@@ -373,7 +358,7 @@ void Highlight::Init()
 	}
 
 	int found = 0;
-	for (int i = 0; i < kColors * kPerColor; ++i)
+	for (int i = 0; i < kLevels * kColors * kSlots; ++i)
 	{
 		TESForm *form = LookupFormByID(((UInt32)modIndex << 24) | (kFirstLocalID + (UInt32)i));
 		if (form && form->formType == FormType::EffectShader)
@@ -382,7 +367,7 @@ void Highlight::Init()
 			++found;
 		}
 	}
-	_MESSAGE("Highlight: %d de %d shaders encontrados (indice do ESP %02X)", found, kColors * kPerColor, modIndex);
+	_MESSAGE("Highlight: %d de %d shaders encontrados (indice do ESP %02X)", found, kLevels * kColors * kSlots, modIndex);
 	if (found == 0)
 		return;
 
@@ -418,7 +403,7 @@ void Highlight::OnScanKey(bool a_down, bool a_up, float a_heldSeconds, bool a_lo
 	static bool s_active = false;
 	static float s_nextAt = 0.0f;
 
-	if (!g_ready || !Settings::bHLEnabled || !Settings::bHLScanEnabled)
+	if (!g_ready || !Settings::bHLScanEnabled)
 	{
 		s_active = false;
 		return;

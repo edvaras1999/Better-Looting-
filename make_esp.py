@@ -4,9 +4,11 @@
 
    Conteudo (mestre: Skyrim.esm):
    - 1 quest ("Start Game Enabled") que liga o script do MCM, BetterLootingMCM  (forma 0x800)
-   - 160 efeitos de shader (EFSH) para o realce de objetos (formas 0x801 a 0x8A0):
-       forma = 0x801 + cor * 32 + posicao ; 5 cores x 32 posicoes
-       posicoes 0 a 3 = realce na mira (rodam) ; 4 a 31 = varrimento por raio
+   - 300 efeitos de shader (EFSH) para o realce de objetos (formas 0x801 a 0x92C):
+       forma = 0x801 + (nivel * 5 + cor) * 12 + posicao ; 5 niveis de intensidade x 5 cores x 12 posicoes
+       posicoes 0 a 3 = realce na mira (rodam) ; 4 a 11 = varrimento por raio
+     A intensidade esta gravada em cada shader (textura de preenchimento cinzenta + alfa), porque o jogo
+     nao le alteracoes feitas aos dados do shader depois de carregado.
      Os dados de base (BASE_DATA) vem do HighlightObjects.esp do Highlight Objects (EdgeLight Edition);
      aqui aplicam-se os mesmos valores que esse mod definia em tempo de execucao, ja gravados no ESP."""
 import os
@@ -25,12 +27,13 @@ BASE_DATA = bytes.fromhex(
     '0000000000000000000000000000000000000000000000004e000000000040400000004000000000'
 )
 
-TEX_ICON = b'Effects\\EnchFlameProject01.dds'
 
 COLORS = [('Gold', (255, 215, 0)), ('White', (255, 255, 255)), ('Green', (0, 255, 102)),
           ('Cyan', (0, 200, 255)), ('Red', (255, 40, 40))]
-PER_COLOR = 32
+SLOTS = 12
 CROSSHAIR_SLOTS = 4
+# (percentagem, alfa) por nivel de intensidade
+LEVELS = [(100, 255), (70, 178), (45, 115), (25, 64), (10, 26)]
 FORM_VERSION = 43
 
 
@@ -42,6 +45,16 @@ def palette_dds(rgb):
     width, height = 256, 4
     data = struct.pack('<HHI', c565, c565, 0) * ((width // 4) * (height // 4))
     header = (b'DDS ' + struct.pack('<7I', 124, 0x81007, height, width, len(data), 0, 0) + b'\x00' * 44 +
+              struct.pack('<2I4s5I', 32, 4, b'DXT1', 0, 0, 0, 0, 0) + struct.pack('<5I', 0x1000, 0, 0, 0, 0))
+    return header + data
+
+
+def fill_dds(gray):
+    """DDS (DXT1, 4x4) cinzento uniforme: textura de preenchimento. Com "cinzento para alfa" ligado,
+    o tom de cinzento define a opacidade do brilho."""
+    c565 = ((gray >> 3) << 11) | ((gray >> 2) << 5) | (gray >> 3)
+    data = struct.pack('<HHI', c565, c565, 0)
+    header = (b'DDS ' + struct.pack('<7I', 124, 0x81007, 4, 4, len(data), 0, 0) + b'\x00' * 44 +
               struct.pack('<2I4s5I', 32, 4, b'DXT1', 0, 0, 0, 0, 0) + struct.pack('<5I', 0x1000, 0, 0, 0, 0))
     return header + data
 
@@ -66,18 +79,18 @@ def grup(label, recs):
             struct.pack('<HH', 0, 0) + struct.pack('<HH', 0, 0) + body)
 
 
-def shader_data(rgb, slot):
+def shader_data(rgb, slot, alpha):
     d = bytearray(BASE_DATA)
     r, g, b = rgb
-    d[0x10:0x14] = bytes((r, g, b, 20))                       # preenchimento: cor 1 (alfa 20)
+    d[0x10:0x14] = bytes((r, g, b, alpha))                    # preenchimento: cor 1 (alfa do nivel)
     struct.pack_into('<f', d, 0x20, 0.01)                     # preenchimento: razao de alfa persistente
     struct.pack_into('<f', d, 0x34, 1.0)                      # contorno: queda
-    d[0x38:0x3C] = bytes((r, g, b, 255))                      # contorno: cor
+    d[0x38:0x3C] = bytes((r, g, b, alpha))                    # contorno: cor
     struct.pack_into('<f', d, 0x3C, 0.1)                      # contorno: entrada
     struct.pack_into('<f', d, 0x40, 0.4 if slot < CROSSHAIR_SLOTS else 2.6)   # contorno: tempo com alfa total
     struct.pack_into('<f', d, 0x44, 0.3)                      # contorno: saida
     struct.pack_into('<f', d, 0x48, 0.0)                      # contorno: razao de alfa persistente
-    struct.pack_into('<f', d, 0x54, 0.15)                     # preenchimento: razao de alfa total (forca do brilho)
+    struct.pack_into('<f', d, 0x54, 1.0)                      # preenchimento: razao de alfa total
     struct.pack_into('<f', d, 0x58, 1.0)                      # contorno: razao de alfa total
     # Outras cores do shader que no original eram brancas/cinzentas e deixavam o brilho branco:
     # 0x10C (cor do contorno), 0x138 e 0x13C (chaves de cor 2 e 3 do preenchimento). Mantem-se o byte de alfa.
@@ -101,18 +114,19 @@ qust = rec('QUST', ID_QUST, [
 ])
 
 efsh = []
-for ci, (cname, rgb) in enumerate(COLORS):
-    for slot in range(PER_COLOR):
-        form_id = OWN | (FIRST_EFSH + ci * PER_COLOR + slot)
-        efsh.append(rec('EFSH', form_id, [
-            sub('EDID', z('BetterLooting_FX_%s_%02d' % (cname, slot))),
-            sub('ICON', TEX_ICON + b'\x00'),
-            sub('ICO2', b'\x00'),
-            sub('NAM7', b'\x00'),
-            sub('NAM8', (u'Effects\\Gradients\\BetterLooting_%s.dds' % cname).encode('latin1') + b'\x00'),
-            sub('NAM9', b'\x00'),
-            sub('DATA', shader_data(rgb, slot)),
-        ]))
+for li, (percent, alpha) in enumerate(LEVELS):
+    for ci, (cname, rgb) in enumerate(COLORS):
+        for slot in range(SLOTS):
+            form_id = OWN | (FIRST_EFSH + (li * len(COLORS) + ci) * SLOTS + slot)
+            efsh.append(rec('EFSH', form_id, [
+                sub('EDID', z('BetterLooting_FX_L%d_%s_%02d' % (li, cname, slot))),
+                sub('ICON', (u'Effects\\Gradients\\BetterLooting_Fill%d.dds' % li).encode('latin1') + b'\x00'),
+                sub('ICO2', b'\x00'),
+                sub('NAM7', b'\x00'),
+                sub('NAM8', (u'Effects\\Gradients\\BetterLooting_%s.dds' % cname).encode('latin1') + b'\x00'),
+                sub('NAM9', b'\x00'),
+                sub('DATA', shader_data(rgb, slot, alpha)),
+            ]))
 
 n_total = 1 + len(efsh) + 2           # registos + 2 grupos (o jogo conta os grupos)
 next_id = FIRST_EFSH + len(efsh)
@@ -137,4 +151,7 @@ os.makedirs(tex_dir, exist_ok=True)
 for cname, rgb in COLORS:
     with open(os.path.join(tex_dir, 'BetterLooting_%s.dds' % cname), 'wb') as f:
         f.write(palette_dds(rgb))
+for li, (percent, alpha) in enumerate(LEVELS):
+    with open(os.path.join(tex_dir, 'BetterLooting_Fill%d.dds' % li), 'wb') as f:
+        f.write(fill_dds(alpha))
 print('BetterLooting.esp: %d bytes, %d shaders; BetterLooting.seq: quest %08X' % (len(esp), len(efsh), ID_QUST))

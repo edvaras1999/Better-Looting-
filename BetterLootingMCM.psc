@@ -173,14 +173,14 @@ Function BuildTables()
 	tEN[34] = "Hide corpses already searched"
 	tPT[34] = "Esconder cadaveres ja revistados"
 
-	sKey = new string[17]
-	sEN = new string[17]
-	sPT = new string[17]
-	sMin = new float[17]
-	sMax = new float[17]
-	sStep = new float[17]
-	sFmt = new string[17]
-	sOpt = new int[17]
+	sKey = new string[16]
+	sEN = new string[16]
+	sPT = new string[16]
+	sMin = new float[16]
+	sMax = new float[16]
+	sStep = new float[16]
+	sFmt = new string[16]
+	sOpt = new int[16]
 	sKey[0] = "iScale"
 	sEN[0] = "Window scale"
 	sPT[0] = "Escala da janela"
@@ -287,19 +287,12 @@ Function BuildTables()
 	sStep[14] = 100.0
 	sFmt[14] = "{0}"
 	sKey[15] = "iHLFillPercent"
-	sEN[15] = "Fill glow strength"
-	sPT[15] = "Forca do brilho de preenchimento"
-	sMin[15] = 0.0
+	sEN[15] = "Glow strength"
+	sPT[15] = "Intensidade do brilho"
+	sMin[15] = 5.0
 	sMax[15] = 100.0
 	sStep[15] = 5.0
 	sFmt[15] = "{0}%"
-	sKey[16] = "iHLEdgePercent"
-	sEN[16] = "Edge glow strength"
-	sPT[16] = "Forca do contorno luminoso"
-	sMin[16] = 0.0
-	sMax[16] = 100.0
-	sStep[16] = 5.0
-	sFmt[16] = "{0}%"
 
 	; ids de opcoes por preencher: -1 (o id 0 e valido, por isso nao serve de "vazio")
 	int n = 0
@@ -428,7 +421,7 @@ Event OnPageReset(string a_page)
 		oHLColor = AddMenuOption(L("Highlight color", "Cor do realce"), ColorName(BetterLootingNative.GetInt("iHLColor", 0)))
 		AddToggleRange(14, 15)
 		sOpt[9] = AddSliderOption(L(sEN[9], sPT[9]), BetterLootingNative.GetInt(sKey[9], 800) as float, sFmt[9])
-		AddSliderRange(15, 16)
+		AddSliderRange(15, 15)
 		AddHeaderOption(L("Object types", "Tipos de objeto"))
 		AddToggleRange(16, 31)
 		AddHeaderOption(L("Area scan", "Varrimento por raio"))
@@ -515,6 +508,159 @@ Event OnOptionDefault(int a_option)
 	elseif a_option == oHLCorpseColor
 		BetterLootingNative.SetInt("iHLCorpseColor", 2)
 		SetMenuOptionValue(a_option, ColorName(2))
+	elseif a_option == oScanKey
+		SetKey("iHLScanKey", a_option, 0)
+	elseif a_option == oVisual
+		BetterLootingNative.SetInt("iVisual", 0)
+		BetterLootingNative.ApplyVisual()
+		SetMenuOptionValue(a_option, VisualName(0))
+	elseif a_option == oLang
+		BetterLootingNative.SetInt("iLanguage", 0)
+		lang = 0
+		ForcePageReset()
+	endif
+EndEvent
+
+Event OnOptionSliderOpen(int a_option)
+	int i = FindSlider(a_option)
+	if i >= 0
+		SetSliderDialogStartValue(BetterLootingNative.GetInt(sKey[i], 0) as float)
+		SetSliderDialogDefaultValue(BetterLootingNative.GetDefault(sKey[i], 0) as float)
+		SetSliderDialogRange(sMin[i], sMax[i])
+		SetSliderDialogInterval(sStep[i])
+	endif
+EndEvent
+
+Event OnOptionSliderAccept(int a_option, float a_value)
+	int i = FindSlider(a_option)
+	if i >= 0
+		BetterLootingNative.SetInt(sKey[i], a_value as int)
+		SetSliderOptionValue(a_option, a_value, sFmt[i])
+	endif
+EndEvent
+
+Event OnOptionMenuOpen(int a_option)
+	string[] opts
+	int cur = 0
+	int dflt = 0
+	if a_option == oLang
+		opts = new string[2]
+		opts[0] = "English"
+		opts[1] = "Portugues"
+		cur = lang
+	elseif a_option == oVisual
+		opts = new string[2]
+		opts[0] = VisualName(0)
+		opts[1] = VisualName(1)
+		cur = BetterLootingNative.GetInt("iVisual", 0)
+	elseif a_option == oAnchorX
+		opts = new string[3]
+		opts[0] = AnchorXName(0)
+		opts[1] = AnchorXName(1)
+		opts[2] = AnchorXName(2)
+		cur = BetterLootingNative.GetInt("iAnchorX", 0)
+	elseif a_option == oAnchorY
+		opts = new string[3]
+		opts[0] = AnchorYName(0)
+		opts[1] = AnchorYName(1)
+		opts[2] = AnchorYName(2)
+		cur = BetterLootingNative.GetInt("iAnchorY", 0)
+	elseif a_option == oHLCorpseColor
+		opts = new string[5]
+		opts[0] = ColorName(0)
+		opts[1] = ColorName(1)
+		opts[2] = ColorName(2)
+		opts[3] = ColorName(3)
+		opts[4] = ColorName(4)
+		cur = BetterLootingNative.GetInt("iHLCorpseColor", 2)
+		dflt = 2
+	elseif a_option == oHLColor
+		opts = new string[5]
+		opts[0] = ColorName(0)
+		opts[1] = ColorName(1)
+		opts[2] = ColorName(2)
+		opts[3] = ColorName(3)
+		opts[4] = ColorName(4)
+		cur = BetterLootingNative.GetInt("iHLColor", 0)
+	elseif a_option == oSortBy
+		opts = new string[4]
+		opts[0] = SortByName(0)
+		opts[1] = SortByName(1)
+		opts[2] = SortByName(2)
+		opts[3] = SortByName(3)
+		cur = BetterLootingNative.GetInt("iSortBy", 0)
+	else
+		return
+	endif
+	SetMenuDialogOptions(opts)
+	SetMenuDialogStartIndex(cur)
+	SetMenuDialogDefaultIndex(dflt)
+EndEvent
+
+Event OnOptionMenuAccept(int a_option, int a_index)
+	if a_index < 0
+		return
+	endif
+	if a_option == oLang
+		BetterLootingNative.SetInt("iLanguage", a_index)
+		lang = a_index
+		ForcePageReset()
+	elseif a_option == oVisual
+		BetterLootingNative.SetInt("iVisual", a_index)
+		BetterLootingNative.ApplyVisual()
+		SetMenuOptionValue(a_option, VisualName(a_index))
+	elseif a_option == oAnchorX
+		BetterLootingNative.SetInt("iAnchorX", a_index)
+		SetMenuOptionValue(a_option, AnchorXName(a_index))
+	elseif a_option == oAnchorY
+		BetterLootingNative.SetInt("iAnchorY", a_index)
+		SetMenuOptionValue(a_option, AnchorYName(a_index))
+	elseif a_option == oHLCorpseColor
+		BetterLootingNative.SetInt("iHLCorpseColor", a_index)
+		SetMenuOptionValue(a_option, ColorName(a_index))
+	elseif a_option == oHLColor
+		BetterLootingNative.SetInt("iHLColor", a_index)
+		SetMenuOptionValue(a_option, ColorName(a_index))
+	elseif a_option == oSortBy
+		BetterLootingNative.SetInt("iSortBy", a_index)
+		SetMenuOptionValue(a_option, SortByName(a_index))
+	endif
+EndEvent
+
+Function SetKey(string a_key, int a_option, int a_code)
+	int code = a_code
+	if code < 1
+		code = BetterLootingNative.GetDefault(a_key, 1)
+	endif
+	BetterLootingNative.SetInt(a_key, code)
+	SetKeyMapOptionValue(a_option, code)
+EndFunction
+
+Event OnOptionKeyMapChange(int a_option, int a_keyCode, string a_conflictControl, string a_conflictName)
+	if a_option == oKeyAll
+		SetKey("iKeyTakeAll", a_option, a_keyCode)
+	elseif a_option == oKeySearch
+		SetKey("iKeySearch", a_option, a_keyCode)
+	elseif a_option == oScanKey
+		SetKey("iHLScanKey", a_option, a_keyCode)
+	endif
+EndEvent
+
+Event OnOptionHighlight(int a_option)
+	if a_option == oVisual
+		SetInfoText(L("Look of the loot window. The change applies the next time the loot menu opens.", "Visual da janela de loot. A mudanca aplica-se na proxima vez que o menu de loot abrir."))
+	elseif a_option == oLang
+		SetInfoText(L("Language of this menu.", "Idioma deste menu."))
+	elseif a_option == oKeyAll
+		SetInfoText(L("Takes every item. While the loot menu is open this key does nothing else.", "Pega todos os itens. Com o menu de loot aberto esta tecla nao faz mais nada."))
+	elseif a_option == oKeySearch
+		SetInfoText(L("Opens the container normally. While the loot menu is open this key does nothing else.", "Abre o contentor normalmente. Com o menu de loot aberto esta tecla nao faz mais nada."))
+	elseif a_option == oAnchorX
+		SetInfoText(L("Where on the screen the window is anchored, horizontally.", "Ponto do ecra onde a janela fica ancorada, na horizontal."))
+	elseif a_option == oAnchorY
+		SetInfoText(L("Where on the screen the window is anchored, vertically.", "Ponto do ecra onde a janela fica ancorada, na vertical."))
+	elseif a_option == sOpt[15]
+		SetInfoText(L("How strong the glow is. It applies in 5 steps (100, 70, 45, 25 and 10%). Lower it to see the details of the objects.", "Quao forte e o brilho. Aplica-se em 5 niveis (100, 70, 45, 25 e 10%). Reduza para ver os detalhes dos objetos."))
 	elseif a_option == oScanKey
 		SetKey("iHLScanKey", a_option, 0)
 	elseif a_option == oVisual
