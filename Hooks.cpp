@@ -205,15 +205,29 @@ public:
 PlayerCharacterEx::FnStartActivation PlayerCharacterEx::fnStartActivationOld;
 
 
-// Com o menu de loot aberto: C = Pegar tudo, R = Procurar (um toque por omissao).
-// Estas teclas sao retiradas da lista de eventos, para o jogo nao fazer o que
-// elas fariam com o menu fechado (empunhar arma, etc.).
+// Teclas da janela de loot (v0.12). Com a janela aberta, cada acao tem a sua tecla e o seu modificador
+// (Shift, Ctrl ou Alt), configuraveis. Codigo da tecla: 1-255 = teclado (DirectInput), 256+ = rato.
+// As teclas que correspondem a uma acao sao retiradas da lista de eventos, para o jogo nao fazer o que
+// elas fariam com a janela fechada (ativar, empunhar arma, atacar...). A tecla de Ativar e a de Empunhar
+// arma do jogo tambem sao retiradas no teclado, para nao pegarem itens por conta propria.
 class PlayerControlsEx : public PlayerControls
 {
 public:
 	typedef EventResult(PlayerControlsEx::*FnReceiveEvent)(InputEvent **evn, BSTEventSource<InputEvent *> *source);
 
 	static FnReceiveEvent fnReceiveEventOld;
+
+	enum Action
+	{
+		kAct_Take,
+		kAct_TakeOne,
+		kAct_Use,
+		kAct_TakeAll,
+		kAct_Search,
+		kAct_EquipRight,
+		kAct_EquipLeft,
+		kAct_Count
+	};
 
 	EventResult ReceiveEvent_Hook(InputEvent **evn, BSTEventSource<InputEvent *> *source)
 	{
@@ -227,14 +241,75 @@ public:
 		return (this->*fnReceiveEventOld)(evn, source);
 	}
 
+	static int KeyOf(int a_action)
+	{
+		switch (a_action)
+		{
+		case kAct_Take:			return Settings::iKeyTake;
+		case kAct_TakeOne:		return Settings::iKeyTakeOne;
+		case kAct_Use:			return Settings::iKeyUse;
+		case kAct_TakeAll:		return Settings::iKeyTakeAll;
+		case kAct_Search:		return Settings::iKeySearch;
+		case kAct_EquipRight:	return Settings::iKeyEquipRight;
+		case kAct_EquipLeft:	return Settings::iKeyEquipLeft;
+		}
+		return 0;
+	}
+
+	static int ModOf(int a_action)
+	{
+		switch (a_action)
+		{
+		case kAct_Take:			return Settings::iModTake;
+		case kAct_TakeOne:		return Settings::iModTakeOne;
+		case kAct_Use:			return Settings::iModUse;
+		case kAct_TakeAll:		return Settings::iModTakeAll;
+		case kAct_Search:		return Settings::iModSearch;
+		case kAct_EquipRight:	return Settings::iModEquipRight;
+		case kAct_EquipLeft:	return Settings::iModEquipLeft;
+		}
+		return 0;
+	}
+
+	// 0 = nenhum, 1 = Shift, 2 = Ctrl, 3 = Alt; 99 = combinacao que nao usamos
+	static int ActiveModifier(const bool *a_down)
+	{
+		const bool shift = a_down[42] || a_down[54];
+		const bool ctrl = a_down[29] || a_down[157];
+		const bool alt = a_down[56] || a_down[184];
+
+		if (!shift && !ctrl && !alt) return 0;
+		if (shift && !ctrl && !alt) return 1;
+		if (ctrl && !shift && !alt) return 2;
+		if (alt && !shift && !ctrl) return 3;
+		return 99;
+	}
+
 	static void FilterEvents(InputEvent **evn)
 	{
-		static bool s_takeAllHeld = false;	// C premido e consumido
-		static bool s_searchHeld = false;	// R premido e consumido
-		static bool s_searchDone = false;	// Procurar ja disparou neste premir
+		static bool s_down[256] = {};			// estado das teclas do teclado (para os modificadores)
+		static bool s_consumed[512] = {};		// teclas cujo premir foi consumido (consome-se tambem a repeticao e o soltar)
+		static int s_searchCode = -1;			// tecla de Procurar premida e consumida
+		static bool s_searchDone = false;		// Procurar ja disparou neste premir
 
 		LootMenu *lootMenu = LootMenu::GetSingleton();
 		const bool visible = (lootMenu && lootMenu->IsVisible());
+
+		// teclas de Ativar e de Empunhar arma do jogo (teclado)
+		int gameActivate = -1;
+		int gameReady = -1;
+		if (visible)
+		{
+			InputStringHolder *holder = InputStringHolder::GetSingleton();
+			InputMappingManager *mapping = InputMappingManager::GetSingleton();
+			if (holder && mapping)
+			{
+				const UInt32 a = mapping->GetMappedKey(holder->activate, BSInputDevice::kType_Keyboard);
+				const UInt32 r = mapping->GetMappedKey(holder->readyWeapon, BSInputDevice::kType_Keyboard);
+				if (a != InputMappingManager::kInvalid) gameActivate = (int)a;
+				if (r != InputMappingManager::kInvalid) gameReady = (int)r;
+			}
+		}
 
 		InputEvent *prev = nullptr;
 		InputEvent *cur = *evn;
@@ -243,54 +318,93 @@ public:
 			InputEvent *next = cur->next;
 			bool consume = false;
 
-			if (cur->eventType == InputEvent::kEventType_Button && cur->deviceType == BSInputDevice::kType_Keyboard)
+			const bool isKeyboard = (cur->deviceType == BSInputDevice::kType_Keyboard);
+			const bool isMouse = (cur->deviceType == BSInputDevice::kType_Mouse);
+
+			if (cur->eventType == InputEvent::kEventType_Button && (isKeyboard || isMouse))
 			{
 				ButtonEvent *btn = static_cast<ButtonEvent *>(cur);
-				const UInt32 key = btn->keyMask;
+				const UInt32 code = isKeyboard ? btn->keyMask : (256 + btn->keyMask);
+
+				// estado dos modificadores (Shift, Ctrl, Alt)
+				if (isKeyboard && btn->keyMask < 256)
+					s_down[btn->keyMask] = !btn->IsUp();
 
 				// varrimento: so observa a tecla (nao a consome), por isso o E continua a ativar normalmente
-				if (key == (UInt32)Settings::iHLScanKey && key != (UInt32)Settings::iKeyTakeAll && key != (UInt32)Settings::iKeySearch)
+				if (code == (UInt32)Settings::iHLScanKey)
 					Highlight::OnScanKey(btn->IsDown(), btn->IsUp(), btn->timer, visible);
 
-				if (key == (UInt32)Settings::iKeyTakeAll)
+				if (code < 512)
 				{
-					if (visible && btn->IsDown())
+					if (s_consumed[code])
 					{
-						s_takeAllHeld = true;
-						lootMenu->TakeAllItems();
-					}
-
-					if (s_takeAllHeld)
-					{
-						consume = true;
-						if (btn->IsUp())
-							s_takeAllHeld = false;
-					}
-				}
-				else if (key == (UInt32)Settings::iKeySearch)
-				{
-					if (visible && btn->IsDown())
-					{
-						s_searchHeld = true;
-						s_searchDone = false;
-					}
-
-					if (s_searchHeld)
-					{
+						// repeticao ou soltar de uma tecla ja consumida
 						consume = true;
 
-						// iSearchHoldMs = 0: dispara logo ao tocar; maior que 0: so depois de premido esse tempo
-						const bool reached = (Settings::iSearchHoldMs <= 0) ||
-							(btn->IsPressed() && btn->timer * 1000.0f >= (float)Settings::iSearchHoldMs);
-						if (!s_searchDone && reached)
+						if ((int)code == s_searchCode)
 						{
-							s_searchDone = true;
-							Highlight::MarkSearched(lootMenu->GetContainerRef());
-							PlayerCharacterEx::OpenContainer();
+							const bool reached = (Settings::iSearchHoldMs <= 0) ||
+								(btn->IsPressed() && btn->timer * 1000.0f >= (float)Settings::iSearchHoldMs);
+							if (!s_searchDone && reached && !btn->IsUp())
+							{
+								s_searchDone = true;
+								Highlight::MarkSearched(lootMenu ? lootMenu->GetContainerRef() : nullptr);
+								PlayerCharacterEx::OpenContainer();
+							}
 						}
 
 						if (btn->IsUp())
-							s_searchHeld = false;
+						{
+							s_consumed[code] = false;
+							if ((int)code == s_searchCode)
+								s_searchCode = -1;
+						}
+					}
+					else if (visible && btn->IsDown())
+					{
+						const int modifier = ActiveModifier(s_down);
+
+						int matched = -1;
+						for (int act = 0; act < kAct_Count; ++act)
+						{
+							if ((UInt32)KeyOf(act) == code && ModOf(act) == modifier)
+							{
+								matched = act;
+								break;
+							}
+						}
+
+						if (matched >= 0)
+						{
+							consume = true;
+							s_consumed[code] = true;
+
+							switch (matched)
+							{
+							case kAct_Take:			lootMenu->TakeItem(false, false);	break;
+							case kAct_TakeOne:		lootMenu->TakeItem(false, true);	break;
+							case kAct_Use:			lootMenu->UseSelected(0);			break;
+							case kAct_TakeAll:		lootMenu->TakeAllItems();			break;
+							case kAct_EquipRight:	lootMenu->UseSelected(1);			break;
+							case kAct_EquipLeft:	lootMenu->UseSelected(2);			break;
+							case kAct_Search:
+								s_searchCode = (int)code;
+								s_searchDone = false;
+								if (Settings::iSearchHoldMs <= 0)
+								{
+									s_searchDone = true;
+									Highlight::MarkSearched(lootMenu->GetContainerRef());
+									PlayerCharacterEx::OpenContainer();
+								}
+								break;
+							}
+						}
+						else if (isKeyboard && ((int)code == gameActivate || (int)code == gameReady))
+						{
+							// a tecla de Ativar/Empunhar do jogo nao faz nada por conta propria com a janela aberta
+							consume = true;
+							s_consumed[code] = true;
+						}
 					}
 				}
 			}
@@ -462,7 +576,7 @@ namespace Hooks
 #endif
 		ReadyWeaponHandlerEx::InitHook();			// [R] or (X)
 		PlayerCharacterEx::InitHook();				// [E] or (A)
-		PlayerControlsEx::InitHook();				// [C] Pegar tudo, [R] Procurar
+		PlayerControlsEx::InitHook();				// teclas da janela de loot (teclado e rato)
 
 		// crosshair text patches
 		TESObjectCONTEx::InitHook();

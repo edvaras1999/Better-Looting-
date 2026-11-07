@@ -60,8 +60,9 @@ public:
 	void Update();
 	void Sort();
 	void SetIndex(SInt32 index);
-	void TakeItem(bool a_all = false);
+	void TakeItem(bool a_all = false, bool a_single = false);
 	void TakeAllItems();
+	void UseSelected(int a_hand);	// 0 = por omissao, 1 = mao direita, 2 = mao esquerda
 
 	// for debugging purpose
 	void Dump();

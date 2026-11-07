@@ -14,7 +14,6 @@ bool	Settings::bDisableIfEmpty = false;
 bool	Settings::bCloseIfEmpty = false;
 bool	Settings::bUseConsole = false;
 bool	Settings::bForceAnsi = false;
-bool	Settings::bDisableLootSingle = false;
 bool	Settings::bSortByCategory = true;
 bool	Settings::bSortDescending = false;
 bool	Settings::bSortWeightlessFirst = false;
@@ -35,9 +34,23 @@ int		Settings::iOffsetY = -200;
 int		Settings::iAlphaNormal = 100;
 int		Settings::iAlphaEmpty = 30;
 
-int		Settings::iKeyTakeAll = 46;		// C
-int		Settings::iKeySearch = 19;		// R
-int		Settings::iSearchHoldMs = 0;	// 0 = um toque
+int		Settings::iKeyTake = 18;			// E
+int		Settings::iModTake = 0;
+int		Settings::iKeyTakeOne = 18;			// Alt+E
+int		Settings::iModTakeOne = 3;
+int		Settings::iKeyUse = 18;				// Shift+E
+int		Settings::iModUse = 1;
+int		Settings::iKeyTakeAll = 46;			// C
+int		Settings::iModTakeAll = 0;
+int		Settings::iKeySearch = 19;			// R
+int		Settings::iModSearch = 0;
+int		Settings::iSearchHoldMs = 0;		// 0 = um toque
+int		Settings::iKeyEquipRight = 256;		// Shift + botao esquerdo do rato
+int		Settings::iModEquipRight = 1;
+int		Settings::iKeyEquipLeft = 257;		// Shift + botao direito do rato
+int		Settings::iModEquipLeft = 1;
+int		Settings::iEquipSlotIdRight = 1;
+int		Settings::iEquipSlotIdLeft = 2;
 
 bool	Settings::bHLEnabled = true;
 bool	Settings::bHLRedStealable = true;
@@ -97,7 +110,6 @@ namespace
 		{ "bCloseIfEmpty",			&Settings::bCloseIfEmpty,			true,	0, 0, 1 },
 		{ "bUseConsole",			&Settings::bUseConsole,				true,	0, 0, 1 },
 		{ "bForceAnsi",				&Settings::bForceAnsi,				true,	0, 0, 1 },
-		{ "bDisableLootSingle",		&Settings::bDisableLootSingle,		true,	0, 0, 1 },
 		{ "bSortByCategory",		&Settings::bSortByCategory,			true,	1, 0, 1 },
 		{ "bSortDescending",		&Settings::bSortDescending,			true,	0, 0, 1 },
 		{ "bSortWeightlessFirst",	&Settings::bSortWeightlessFirst,		true,	0, 0, 1 },
@@ -118,9 +130,23 @@ namespace
 		{ "iAlphaNormal",			&Settings::iAlphaNormal,			false,	100,	10,		100 },
 		{ "iAlphaEmpty",			&Settings::iAlphaEmpty,				false,	30,		0,		100 },
 
-		{ "iKeyTakeAll",			&Settings::iKeyTakeAll,				false,	46,		1,		255 },
-		{ "iKeySearch",				&Settings::iKeySearch,				false,	19,		1,		255 },
-		{ "iSearchHoldMs",			&Settings::iSearchHoldMs,			false,	0,		0,		2000 },
+		{ "iKeyTake",		&Settings::iKeyTake,		false,	18, 1, 511 },
+		{ "iModTake",		&Settings::iModTake,		false,	0, 0, 3 },
+		{ "iKeyTakeOne",		&Settings::iKeyTakeOne,		false,	18, 1, 511 },
+		{ "iModTakeOne",		&Settings::iModTakeOne,		false,	3, 0, 3 },
+		{ "iKeyUse",		&Settings::iKeyUse,		false,	18, 1, 511 },
+		{ "iModUse",		&Settings::iModUse,		false,	1, 0, 3 },
+		{ "iKeyTakeAll",		&Settings::iKeyTakeAll,		false,	46, 1, 511 },
+		{ "iModTakeAll",		&Settings::iModTakeAll,		false,	0, 0, 3 },
+		{ "iKeySearch",		&Settings::iKeySearch,		false,	19, 1, 511 },
+		{ "iModSearch",		&Settings::iModSearch,		false,	0, 0, 3 },
+		{ "iSearchHoldMs",		&Settings::iSearchHoldMs,		false,	0, 0, 2000 },
+		{ "iKeyEquipRight",		&Settings::iKeyEquipRight,		false,	256, 1, 511 },
+		{ "iModEquipRight",		&Settings::iModEquipRight,		false,	1, 0, 3 },
+		{ "iKeyEquipLeft",		&Settings::iKeyEquipLeft,		false,	257, 1, 511 },
+		{ "iModEquipLeft",		&Settings::iModEquipLeft,		false,	1, 0, 3 },
+		{ "iEquipSlotIdRight",		&Settings::iEquipSlotIdRight,		false,	1, 0, 5 },
+		{ "iEquipSlotIdLeft",		&Settings::iEquipSlotIdLeft,		false,	2, 0, 5 },
 
 		{ "bHLEnabled",				&Settings::bHLEnabled,				true,	1, 0, 1 },
 		{ "bHLRedStealable",		&Settings::bHLRedStealable,			true,	1, 0, 1 },
@@ -129,7 +155,7 @@ namespace
 		{ "iHLFillPercent",			&Settings::iHLFillPercent,			false,	45, 0, 100 },
 		{ "bHLDebug",				&Settings::bHLDebug,				true,	0, 0, 1 },
 		{ "bHLScanEnabled",			&Settings::bHLScanEnabled,			true,	1, 0, 1 },
-		{ "iHLScanKey",				&Settings::iHLScanKey,				false,	18, 1, 255 },
+		{ "iHLScanKey",				&Settings::iHLScanKey,				false,	18, 1, 511 },
 		{ "iHLScanHoldMs",			&Settings::iHLScanHoldMs,			false,	500, 0, 2000 },
 		{ "iHLScanRadius",			&Settings::iHLScanRadius,			false,	1500, 300, 5000 },
 		{ "iHLScanMs",				&Settings::iHLScanMs,				false,	3000, 500, 10000 },

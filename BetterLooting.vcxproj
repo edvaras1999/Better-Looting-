@@ -101,6 +101,7 @@
     <ClCompile Include="ItemData.cpp" />
     <ClCompile Include="LootMenu.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="Equip.cpp" />
     <ClCompile Include="Highlight.cpp" />
     <ClCompile Include="Papyrus.cpp" />
     <ClCompile Include="Settings.cpp" />
@@ -119,6 +120,7 @@
     <ClInclude Include="Hooks.h" />
     <ClInclude Include="ItemData.h" />
     <ClInclude Include="LootMenu.h" />
+    <ClInclude Include="Equip.h" />
     <ClInclude Include="Highlight.h" />
     <ClInclude Include="Papyrus.h" />
     <ClInclude Include="Settings.h" />

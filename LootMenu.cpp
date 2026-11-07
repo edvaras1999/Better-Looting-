@@ -1,6 +1,7 @@
 ﻿#include "LootMenu.h"
 #include "Settings.h"
 #include "Highlight.h"
+#include "Equip.h"
 #include <SKSE/PluginAPI.h>
 #include <SKSE/DebugLog.h>
 #include <SKSE/GameRTTI.h>
@@ -24,47 +25,6 @@ static void QueueUITask(void (LootMenu::*fn)(GFxMovieView *));
 
 LootMenu * LootMenu::ms_pSingleton = nullptr;
 BSSpinLock LootMenu::ms_lock;
-
-
-static bool IsDownLShift()
-{
-	if (Settings::bDisableLootSingle)
-		return false;
-
-	InputManager *input = InputManager::GetSingleton();
-
-	//BSInputDevice *keyboard = input->keyboard;
-	BSWin32KeyboardDevice *keyboard = DYNAMIC_CAST<BSWin32KeyboardDevice *>(input->keyboard);
-	if (keyboard && keyboard->IsEnabled())
-	{
-		static UInt32 keyRun = 0;
-		if (keyRun == 0)
-		{
-			InputStringHolder *holder = InputStringHolder::GetSingleton();
-			keyRun = InputMappingManager::GetSingleton()->GetMappedKey(holder->run, BSInputDevice::kType_Keyboard);
-		}
-
-		if (keyRun != InputMappingManager::kInvalid && keyboard->IsPressed(keyRun))
-			return true;
-	}
-
-	//BSInputDevice *gamepad = input->gamepad;
-	BSWin32GamepadDevice *gamepad = DYNAMIC_CAST<BSWin32GamepadDevice *>(input->gamepad);
-	if (gamepad && gamepad->IsEnabled())
-	{
-		static UInt32 keySprint = 0;
-		if (keySprint == 0)
-		{
-			InputStringHolder *holder = InputStringHolder::GetSingleton();
-			keySprint = InputMappingManager::GetSingleton()->GetMappedKey(holder->sprint, BSInputDevice::kType_Gamepad);
-		}
-
-		if (keySprint != InputMappingManager::kInvalid && gamepad->IsPressed(keySprint))
-			return true;
-	}
-
-	return false;
-}
 
 
 // Opens LootMenu when LoadingMenu is closed.
@@ -1001,7 +961,7 @@ void LootMenu::SetIndex(SInt32 index)
 }
 
 
-void LootMenu::TakeItem(bool a_all)
+void LootMenu::TakeItem(bool a_all, bool a_single)
 {
 	BSSpinLockGuard guard(ms_lock);
 
@@ -1054,7 +1014,7 @@ void LootMenu::TakeItem(bool a_all)
 			}
 		}
 
-		if (!a_all && numItems > 1 && IsDownLShift())
+		if (!a_all && a_single && numItems > 1)
 		{
 			bTakeSingle = true;
 			numItems = 1;
@@ -1107,6 +1067,53 @@ void LootMenu::TakeItem(bool a_all)
 		m_items.erase(it);
 		InvokeScaleform_Open();
 	}
+}
+
+
+// Usar/equipar o item selecionado: pega-o (so uma unidade; a municao pega-se inteira) e equipa-o ou usa-o.
+// Livros, chaves e restantes itens so sao levados.
+void LootMenu::UseSelected(int a_hand)
+{
+	BSSpinLockGuard guard(ms_lock);
+
+	if (!IsOpen())
+		return;
+
+	if (m_selectedIndex < 0 || m_items.size() <= m_selectedIndex)
+		return;
+
+	TESForm *form = m_items[m_selectedIndex].pEntry->baseForm;
+	if (!form)
+		return;
+
+	const FormType type = form->formType;
+	const bool usable = type == FormType::Armor || type == FormType::Weapon || type == FormType::Ammo ||
+		type == FormType::Potion || type == FormType::Ingredient || type == FormType::ScrollItem;
+
+	if (!usable)
+	{
+		TakeItem(false, false);
+		return;
+	}
+
+	// mao: so conta para armas de uma mao
+	int slotId = 0;
+	if (type == FormType::Weapon && a_hand != 0)
+	{
+		const UInt8 weaponType = static_cast<TESObjectWEAP *>(form)->type();
+		const bool twoHanded = weaponType == TESObjectWEAP::GameData::kType_TwoHandSword ||
+			weaponType == TESObjectWEAP::GameData::kType_TwoHandAxe ||
+			weaponType == TESObjectWEAP::GameData::kType_Bow ||
+			weaponType == TESObjectWEAP::GameData::kType_Bow2 ||
+			weaponType == TESObjectWEAP::GameData::kType_CrossBow;
+		if (!twoHanded)
+			slotId = (a_hand == 1) ? Settings::iEquipSlotIdRight : Settings::iEquipSlotIdLeft;
+	}
+
+	const bool whole = (type == FormType::Ammo);
+	TakeItem(false, !whole);
+
+	Equip::EquipItem(g_thePlayer, form, slotId);
 }
 
 

@@ -12,7 +12,6 @@ struct Settings
 	static bool	bCloseIfEmpty;
 	static bool	bUseConsole;
 	static bool	bForceAnsi;
-	static bool	bDisableLootSingle;
 
 	// ordenacao da lista
 	static bool	bSortByCategory;		// agrupa por categoria (ordem do QuickLootIE)
@@ -38,10 +37,25 @@ struct Settings
 	static int	iAlphaNormal;
 	static int	iAlphaEmpty;
 
-	// teclas (codigos DirectInput)
+	// teclas da janela de loot. Codigo: 1-255 = teclado (DirectInput), 256-265 = botoes do rato.
+	// Modificador: 0 = nenhum, 1 = Shift, 2 = Ctrl, 3 = Alt.
+	static int	iKeyTake;
+	static int	iModTake;
+	static int	iKeyTakeOne;
+	static int	iModTakeOne;
+	static int	iKeyUse;
+	static int	iModUse;
 	static int	iKeyTakeAll;
+	static int	iModTakeAll;
 	static int	iKeySearch;
+	static int	iModSearch;
 	static int	iSearchHoldMs;
+	static int	iKeyEquipRight;
+	static int	iModEquipRight;
+	static int	iKeyEquipLeft;
+	static int	iModEquipLeft;
+	static int	iEquipSlotIdRight;	// identificador da mao direita em Actor.EquipItemEx
+	static int	iEquipSlotIdLeft;	// identificador da mao esquerda em Actor.EquipItemEx
 
 	// visual: 0 = Redesigned, 1 = QuickLootIE original
 	static int	iVisual;

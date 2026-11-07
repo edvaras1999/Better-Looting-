@@ -20,7 +20,15 @@ float[] sStep
 string[] sFmt
 int[] sOpt
 
-; ---------------- menus e teclas ----------------
+; ---------------- teclas (tecla + modificador) ----------------
+string[] aKey
+string[] aMod
+string[] aEN
+string[] aPT
+int[] aOptKey
+int[] aOptMod
+
+; ---------------- menus ----------------
 int oLang
 int oVisual
 int oAnchorX
@@ -28,12 +36,9 @@ int oAnchorY
 int oSortBy
 int oHLColor
 int oHLCorpseColor
-int oScanKey
-int oKeyAll
-int oKeySearch
 
 int Function GetVersion()
-	return 1
+	return 2
 EndFunction
 
 Event OnConfigInit()
@@ -63,10 +68,10 @@ string Function L(string en, string pt)
 EndFunction
 
 Function BuildTables()
-	tKey = new string[35]
-	tEN = new string[35]
-	tPT = new string[35]
-	tOpt = new int[35]
+	tKey = new string[34]
+	tEN = new string[34]
+	tPT = new string[34]
+	tOpt = new int[34]
 	tKey[0] = "bDisableInCombat"
 	tEN[0] = "Disable in combat"
 	tPT[0] = "Desativar em combate"
@@ -82,97 +87,93 @@ Function BuildTables()
 	tKey[4] = "bCloseIfEmpty"
 	tEN[4] = "Close when it becomes empty"
 	tPT[4] = "Fechar quando ficar vazio"
-	tKey[5] = "bDisableLootSingle"
-	tEN[5] = "Take whole stack (ignore Left Shift)"
-	tPT[5] = "Pegar a pilha toda (ignorar Shift esquerdo)"
-	tKey[6] = "bShowValue"
-	tEN[6] = "Show value column"
-	tPT[6] = "Mostrar coluna de valor"
-	tKey[7] = "bShowWeight"
-	tEN[7] = "Show weight column"
-	tPT[7] = "Mostrar coluna de peso"
-	tKey[8] = "bShowValuePerWeight"
-	tEN[8] = "Show value per weight column"
-	tPT[8] = "Mostrar coluna de valor por peso"
-	tKey[9] = "bShowItemIcons"
-	tEN[9] = "Show item icons"
-	tPT[9] = "Mostrar icones dos itens"
-	tKey[10] = "bSortByCategory"
-	tEN[10] = "Group by category (gold, gems, potions, weapons...)"
-	tPT[10] = "Agrupar por categoria (ouro, gemas, pocoes, armas...)"
-	tKey[11] = "bSortDescending"
-	tEN[11] = "Descending order"
-	tPT[11] = "Ordem descendente"
-	tKey[12] = "bSortWeightlessFirst"
-	tEN[12] = "Weightless items first"
-	tPT[12] = "Itens sem peso primeiro"
-	tKey[13] = "bHLEnabled"
-	tEN[13] = "Highlight objects under the crosshair"
-	tPT[13] = "Realcar objetos na mira"
-	tKey[14] = "bHLRedStealable"
-	tEN[14] = "Red highlight for what would be stealing"
-	tPT[14] = "Realce vermelho para o que seria roubo"
-	tKey[15] = "bHLIgnoreUnnamed"
-	tEN[15] = "Ignore objects without a name"
-	tPT[15] = "Ignorar objetos sem nome"
-	tKey[16] = "bHLActivator"
-	tEN[16] = "Activators"
-	tPT[16] = "Ativadores"
-	tKey[17] = "bHLTalkingActivator"
-	tEN[17] = "Talking activators"
-	tPT[17] = "Ativadores falantes"
-	tKey[18] = "bHLContainer"
-	tEN[18] = "Containers"
-	tPT[18] = "Contentores"
-	tKey[19] = "bHLDoor"
-	tEN[19] = "Doors"
-	tPT[19] = "Portas"
-	tKey[20] = "bHLFlora"
-	tEN[20] = "Flora and trees"
-	tPT[20] = "Flora e arvores"
-	tKey[21] = "bHLFurniture"
-	tEN[21] = "Furniture"
-	tPT[21] = "Mobilia"
-	tKey[22] = "bHLArmor"
-	tEN[22] = "Armor and clothes"
-	tPT[22] = "Armaduras e roupas"
-	tKey[23] = "bHLWeapon"
-	tEN[23] = "Weapons"
-	tPT[23] = "Armas"
-	tKey[24] = "bHLAmmo"
-	tEN[24] = "Ammo"
-	tPT[24] = "Municao"
-	tKey[25] = "bHLBook"
-	tEN[25] = "Books"
-	tPT[25] = "Livros"
-	tKey[26] = "bHLIngredient"
-	tEN[26] = "Ingredients"
-	tPT[26] = "Ingredientes"
-	tKey[27] = "bHLKey"
-	tEN[27] = "Keys"
-	tPT[27] = "Chaves"
-	tKey[28] = "bHLMisc"
-	tEN[28] = "Misc items"
-	tPT[28] = "Itens diversos"
-	tKey[29] = "bHLPotion"
-	tEN[29] = "Potions"
-	tPT[29] = "Pocoes"
-	tKey[30] = "bHLScroll"
-	tEN[30] = "Scrolls"
-	tPT[30] = "Pergaminhos"
-	tKey[31] = "bHLSoulGem"
-	tEN[31] = "Soul gems"
-	tPT[31] = "Gemas de alma"
-	tKey[32] = "bHLScanEnabled"
-	tEN[32] = "Area scan (hold the key)"
-	tPT[32] = "Varrimento por raio (manter a tecla)"
-	tKey[33] = "bHLCorpses"
-	tEN[33] = "Scan also highlights lootable corpses"
-	tPT[33] = "O varrimento realca tambem cadaveres com loot"
-	tKey[34] = "bHLCorpseHideSearched"
-	tEN[34] = "Hide corpses already searched"
-	tPT[34] = "Esconder cadaveres ja revistados"
-
+	tKey[5] = "bShowValue"
+	tEN[5] = "Show value column"
+	tPT[5] = "Mostrar coluna de valor"
+	tKey[6] = "bShowWeight"
+	tEN[6] = "Show weight column"
+	tPT[6] = "Mostrar coluna de peso"
+	tKey[7] = "bShowValuePerWeight"
+	tEN[7] = "Show value per weight column"
+	tPT[7] = "Mostrar coluna de valor por peso"
+	tKey[8] = "bShowItemIcons"
+	tEN[8] = "Show item icons"
+	tPT[8] = "Mostrar icones dos itens"
+	tKey[9] = "bSortByCategory"
+	tEN[9] = "Group by category (gold, gems, potions, weapons...)"
+	tPT[9] = "Agrupar por categoria (ouro, gemas, pocoes, armas...)"
+	tKey[10] = "bSortDescending"
+	tEN[10] = "Descending order"
+	tPT[10] = "Ordem descendente"
+	tKey[11] = "bSortWeightlessFirst"
+	tEN[11] = "Weightless items first"
+	tPT[11] = "Itens sem peso primeiro"
+	tKey[12] = "bHLEnabled"
+	tEN[12] = "Highlight objects under the crosshair"
+	tPT[12] = "Realcar objetos na mira"
+	tKey[13] = "bHLRedStealable"
+	tEN[13] = "Red highlight for what would be stealing"
+	tPT[13] = "Realce vermelho para o que seria roubo"
+	tKey[14] = "bHLIgnoreUnnamed"
+	tEN[14] = "Ignore objects without a name"
+	tPT[14] = "Ignorar objetos sem nome"
+	tKey[15] = "bHLActivator"
+	tEN[15] = "Activators"
+	tPT[15] = "Ativadores"
+	tKey[16] = "bHLTalkingActivator"
+	tEN[16] = "Talking activators"
+	tPT[16] = "Ativadores falantes"
+	tKey[17] = "bHLContainer"
+	tEN[17] = "Containers"
+	tPT[17] = "Contentores"
+	tKey[18] = "bHLDoor"
+	tEN[18] = "Doors"
+	tPT[18] = "Portas"
+	tKey[19] = "bHLFlora"
+	tEN[19] = "Flora and trees"
+	tPT[19] = "Flora e arvores"
+	tKey[20] = "bHLFurniture"
+	tEN[20] = "Furniture"
+	tPT[20] = "Mobilia"
+	tKey[21] = "bHLArmor"
+	tEN[21] = "Armor and clothes"
+	tPT[21] = "Armaduras e roupas"
+	tKey[22] = "bHLWeapon"
+	tEN[22] = "Weapons"
+	tPT[22] = "Armas"
+	tKey[23] = "bHLAmmo"
+	tEN[23] = "Ammo"
+	tPT[23] = "Municao"
+	tKey[24] = "bHLBook"
+	tEN[24] = "Books"
+	tPT[24] = "Livros"
+	tKey[25] = "bHLIngredient"
+	tEN[25] = "Ingredients"
+	tPT[25] = "Ingredientes"
+	tKey[26] = "bHLKey"
+	tEN[26] = "Keys"
+	tPT[26] = "Chaves"
+	tKey[27] = "bHLMisc"
+	tEN[27] = "Misc items"
+	tPT[27] = "Itens diversos"
+	tKey[28] = "bHLPotion"
+	tEN[28] = "Potions"
+	tPT[28] = "Pocoes"
+	tKey[29] = "bHLScroll"
+	tEN[29] = "Scrolls"
+	tPT[29] = "Pergaminhos"
+	tKey[30] = "bHLSoulGem"
+	tEN[30] = "Soul gems"
+	tPT[30] = "Gemas de alma"
+	tKey[31] = "bHLScanEnabled"
+	tEN[31] = "Area scan (hold the key)"
+	tPT[31] = "Varrimento por raio (manter a tecla)"
+	tKey[32] = "bHLCorpses"
+	tEN[32] = "Highlight lootable corpses (crosshair and scan)"
+	tPT[32] = "Realcar cadaveres com loot (mira e varrimento)"
+	tKey[33] = "bHLCorpseHideSearched"
+	tEN[33] = "Hide corpses already searched"
+	tPT[33] = "Esconder cadaveres ja revistados"
 	sKey = new string[16]
 	sEN = new string[16]
 	sPT = new string[16]
@@ -293,6 +294,44 @@ Function BuildTables()
 	sMax[15] = 100.0
 	sStep[15] = 5.0
 	sFmt[15] = "{0}%"
+	aKey = new string[8]
+	aMod = new string[8]
+	aEN = new string[8]
+	aPT = new string[8]
+	aOptKey = new int[8]
+	aOptMod = new int[8]
+	aKey[0] = "iKeyTake"
+	aMod[0] = "iModTake"
+	aEN[0] = "Take"
+	aPT[0] = "Pegar"
+	aKey[1] = "iKeyTakeOne"
+	aMod[1] = "iModTakeOne"
+	aEN[1] = "Take only one"
+	aPT[1] = "Pegar so um"
+	aKey[2] = "iKeyUse"
+	aMod[2] = "iModUse"
+	aEN[2] = "Use / equip"
+	aPT[2] = "Usar / equipar"
+	aKey[3] = "iKeyTakeAll"
+	aMod[3] = "iModTakeAll"
+	aEN[3] = "Take all"
+	aPT[3] = "Pegar tudo"
+	aKey[4] = "iKeySearch"
+	aMod[4] = "iModSearch"
+	aEN[4] = "Search (open the container)"
+	aPT[4] = "Procurar (abrir o contentor)"
+	aKey[5] = "iKeyEquipRight"
+	aMod[5] = "iModEquipRight"
+	aEN[5] = "Equip in the right hand"
+	aPT[5] = "Equipar na mao direita"
+	aKey[6] = "iKeyEquipLeft"
+	aMod[6] = "iModEquipLeft"
+	aEN[6] = "Equip in the left hand"
+	aPT[6] = "Equipar na mao esquerda"
+	aKey[7] = "iHLScanKey"
+	aMod[7] = ""
+	aEN[7] = "Area scan key (hold)"
+	aPT[7] = "Tecla do varrimento (manter)"
 
 	; ids de opcoes por preencher: -1 (o id 0 e valido, por isso nao serve de "vazio")
 	int n = 0
@@ -305,6 +344,12 @@ Function BuildTables()
 		sOpt[n] = -1
 		n += 1
 	endwhile
+	n = 0
+	while n < aOptKey.Length
+		aOptKey[n] = -1
+		aOptMod[n] = -1
+		n += 1
+	endwhile
 	oLang = -1
 	oVisual = -1
 	oAnchorX = -1
@@ -312,14 +357,11 @@ Function BuildTables()
 	oSortBy = -1
 	oHLColor = -1
 	oHLCorpseColor = -1
-	oScanKey = -1
-	oKeyAll = -1
-	oKeySearch = -1
 EndFunction
 
 string Function VisualName(int v)
 	if v == 1
-		return L("Original (QuickLootIE)", "Original (QuickLootIE)")
+		return "Original (QuickLootIE)"
 	endif
 	return "Redesigned"
 EndFunction
@@ -329,6 +371,17 @@ string Function LangName(int v)
 		return "Portugues"
 	endif
 	return "English"
+EndFunction
+
+string Function ModName2(int v)
+	if v == 1
+		return "Shift"
+	elseif v == 2
+		return "Ctrl"
+	elseif v == 3
+		return "Alt"
+	endif
+	return L("None", "Nenhum")
 EndFunction
 
 string Function ColorName(int v)
@@ -389,6 +442,15 @@ Function AddSliderRange(int first, int last)
 	endwhile
 EndFunction
 
+Function AddKeyRow(int i)
+	aOptKey[i] = AddKeyMapOption(L(aEN[i], aPT[i]), BetterLootingNative.GetInt(aKey[i], 18))
+	if aMod[i] != ""
+		aOptMod[i] = AddMenuOption(L(aEN[i], aPT[i]) + " - " + L("modifier", "modificador"), ModName2(BetterLootingNative.GetInt(aMod[i], 0)))
+	else
+		AddEmptyOption()
+	endif
+EndFunction
+
 Event OnPageReset(string a_page)
 	BuildTables()
 	lang = BetterLootingNative.GetInt("iLanguage", 0)
@@ -399,11 +461,11 @@ Event OnPageReset(string a_page)
 		oLang = AddMenuOption(L("Language", "Idioma"), LangName(lang))
 		oVisual = AddMenuOption(L("Loot window look", "Visual da janela de loot"), VisualName(BetterLootingNative.GetInt("iVisual", 0)))
 		AddHeaderOption(L("Behavior", "Comportamento"))
-		AddToggleRange(0, 5)
+		AddToggleRange(0, 4)
 		AddHeaderOption(L("Sorting", "Ordenacao"))
-		AddToggleRange(10, 10)
+		AddToggleRange(9, 9)
 		oSortBy = AddMenuOption(L("Sort by", "Ordenar por"), SortByName(BetterLootingNative.GetInt("iSortBy", 0)))
-		AddToggleRange(11, 12)
+		AddToggleRange(10, 11)
 	elseif a_page == Pages[1]
 		AddHeaderOption(L("Size and lines", "Tamanho e linhas"))
 		AddSliderRange(0, 3)
@@ -414,29 +476,40 @@ Event OnPageReset(string a_page)
 		AddHeaderOption(L("Opacity", "Opacidade"))
 		AddSliderRange(6, 7)
 		AddHeaderOption(L("Columns and icons", "Colunas e icones"))
-		AddToggleRange(6, 9)
+		AddToggleRange(5, 8)
+	elseif a_page == Pages[2]
+		SetCursorFillMode(LEFT_TO_RIGHT)
+		AddHeaderOption(L("Loot window keys", "Teclas da janela de loot"))
+		AddHeaderOption(L("Modifiers", "Modificadores"))
+		int i = 0
+		while i < 7
+			AddKeyRow(i)
+			i += 1
+		endwhile
+		AddHeaderOption(L("Timing", "Tempos"))
+		AddHeaderOption("")
+		AddSliderRange(8, 8)
+		AddEmptyOption()
+		AddHeaderOption(L("Area scan (outside the loot window)", "Varrimento (fora da janela de loot)"))
+		AddHeaderOption("")
+		AddKeyRow(7)
+		AddSliderRange(10, 10)
 	elseif a_page == Pages[3]
 		AddHeaderOption(L("Crosshair highlight", "Realce na mira"))
-		AddToggleRange(13, 13)
+		AddToggleRange(12, 12)
 		oHLColor = AddMenuOption(L("Highlight color", "Cor do realce"), ColorName(BetterLootingNative.GetInt("iHLColor", 0)))
-		AddToggleRange(14, 15)
-		sOpt[9] = AddSliderOption(L(sEN[9], sPT[9]), BetterLootingNative.GetInt(sKey[9], 800) as float, sFmt[9])
+		AddToggleRange(13, 14)
+		AddSliderRange(9, 9)
 		AddSliderRange(15, 15)
 		AddHeaderOption(L("Object types", "Tipos de objeto"))
-		AddToggleRange(16, 31)
+		AddToggleRange(15, 30)
 		AddHeaderOption(L("Area scan", "Varrimento por raio"))
-		AddToggleRange(32, 32)
-		oScanKey = AddKeyMapOption(L("Scan key (hold)", "Tecla do varrimento (manter)"), BetterLootingNative.GetInt("iHLScanKey", 18))
-		AddSliderRange(10, 13)
+		AddToggleRange(31, 31)
+		AddSliderRange(11, 13)
 		AddHeaderOption(L("Lootable corpses", "Cadaveres com loot"))
-		AddToggleRange(33, 34)
+		AddToggleRange(32, 33)
 		oHLCorpseColor = AddMenuOption(L("Corpse color", "Cor dos cadaveres"), ColorName(BetterLootingNative.GetInt("iHLCorpseColor", 2)))
 		AddSliderRange(14, 14)
-	elseif a_page == Pages[2]
-		AddHeaderOption(L("Keys (loot menu open)", "Teclas (menu de loot aberto)"))
-		oKeyAll = AddKeyMapOption(L("Take all", "Pegar tudo"), BetterLootingNative.GetInt("iKeyTakeAll", 46))
-		oKeySearch = AddKeyMapOption(L("Search (open the container)", "Procurar (abrir o contentor)"), BetterLootingNative.GetInt("iKeySearch", 19))
-		sOpt[8] = AddSliderOption(L(sEN[8], sPT[8]), BetterLootingNative.GetInt(sKey[8], 0) as float, sFmt[8])
 	endif
 EndEvent
 
@@ -460,6 +533,37 @@ int Function FindSlider(int a_option)
 		i += 1
 	endwhile
 	return -1
+EndFunction
+
+int Function FindKey(int a_option)
+	int i = 0
+	while i < aOptKey.Length
+		if aOptKey[i] == a_option
+			return i
+		endif
+		i += 1
+	endwhile
+	return -1
+EndFunction
+
+int Function FindMod(int a_option)
+	int i = 0
+	while i < aOptMod.Length
+		if aOptMod[i] == a_option
+			return i
+		endif
+		i += 1
+	endwhile
+	return -1
+EndFunction
+
+Function SetKey(string a_key, int a_option, int a_code)
+	int code = a_code
+	if code < 1
+		code = BetterLootingNative.GetDefault(a_key, 1)
+	endif
+	BetterLootingNative.SetInt(a_key, code)
+	SetKeyMapOptionValue(a_option, code)
 EndFunction
 
 Event OnOptionSelect(int a_option)
@@ -489,11 +593,19 @@ Event OnOptionDefault(int a_option)
 		SetSliderOptionValue(a_option, ds as float, sFmt[i])
 		return
 	endif
-	if a_option == oKeyAll
-		SetKey("iKeyTakeAll", a_option, 0)
-	elseif a_option == oKeySearch
-		SetKey("iKeySearch", a_option, 0)
-	elseif a_option == oAnchorX
+	i = FindKey(a_option)
+	if i >= 0
+		SetKey(aKey[i], a_option, 0)
+		return
+	endif
+	i = FindMod(a_option)
+	if i >= 0
+		int dm = BetterLootingNative.GetDefault(aMod[i], 0)
+		BetterLootingNative.SetInt(aMod[i], dm)
+		SetMenuOptionValue(a_option, ModName2(dm))
+		return
+	endif
+	if a_option == oAnchorX
 		BetterLootingNative.SetInt("iAnchorX", 0)
 		SetMenuOptionValue(a_option, AnchorXName(0))
 	elseif a_option == oAnchorY
@@ -508,8 +620,6 @@ Event OnOptionDefault(int a_option)
 	elseif a_option == oHLCorpseColor
 		BetterLootingNative.SetInt("iHLCorpseColor", 2)
 		SetMenuOptionValue(a_option, ColorName(2))
-	elseif a_option == oScanKey
-		SetKey("iHLScanKey", a_option, 0)
 	elseif a_option == oVisual
 		BetterLootingNative.SetInt("iVisual", 0)
 		BetterLootingNative.ApplyVisual()
@@ -543,7 +653,16 @@ Event OnOptionMenuOpen(int a_option)
 	string[] opts
 	int cur = 0
 	int dflt = 0
-	if a_option == oLang
+	int k = FindMod(a_option)
+	if k >= 0
+		opts = new string[4]
+		opts[0] = ModName2(0)
+		opts[1] = ModName2(1)
+		opts[2] = ModName2(2)
+		opts[3] = ModName2(3)
+		cur = BetterLootingNative.GetInt(aMod[k], 0)
+		dflt = BetterLootingNative.GetDefault(aMod[k], 0)
+	elseif a_option == oLang
 		opts = new string[2]
 		opts[0] = "English"
 		opts[1] = "Portugues"
@@ -565,6 +684,21 @@ Event OnOptionMenuOpen(int a_option)
 		opts[1] = AnchorYName(1)
 		opts[2] = AnchorYName(2)
 		cur = BetterLootingNative.GetInt("iAnchorY", 0)
+	elseif a_option == oSortBy
+		opts = new string[4]
+		opts[0] = SortByName(0)
+		opts[1] = SortByName(1)
+		opts[2] = SortByName(2)
+		opts[3] = SortByName(3)
+		cur = BetterLootingNative.GetInt("iSortBy", 0)
+	elseif a_option == oHLColor
+		opts = new string[5]
+		opts[0] = ColorName(0)
+		opts[1] = ColorName(1)
+		opts[2] = ColorName(2)
+		opts[3] = ColorName(3)
+		opts[4] = ColorName(4)
+		cur = BetterLootingNative.GetInt("iHLColor", 0)
 	elseif a_option == oHLCorpseColor
 		opts = new string[5]
 		opts[0] = ColorName(0)
@@ -574,21 +708,6 @@ Event OnOptionMenuOpen(int a_option)
 		opts[4] = ColorName(4)
 		cur = BetterLootingNative.GetInt("iHLCorpseColor", 2)
 		dflt = 2
-	elseif a_option == oHLColor
-		opts = new string[5]
-		opts[0] = ColorName(0)
-		opts[1] = ColorName(1)
-		opts[2] = ColorName(2)
-		opts[3] = ColorName(3)
-		opts[4] = ColorName(4)
-		cur = BetterLootingNative.GetInt("iHLColor", 0)
-	elseif a_option == oSortBy
-		opts = new string[4]
-		opts[0] = SortByName(0)
-		opts[1] = SortByName(1)
-		opts[2] = SortByName(2)
-		opts[3] = SortByName(3)
-		cur = BetterLootingNative.GetInt("iSortBy", 0)
 	else
 		return
 	endif
@@ -601,7 +720,11 @@ Event OnOptionMenuAccept(int a_option, int a_index)
 	if a_index < 0
 		return
 	endif
-	if a_option == oLang
+	int k = FindMod(a_option)
+	if k >= 0
+		BetterLootingNative.SetInt(aMod[k], a_index)
+		SetMenuOptionValue(a_option, ModName2(a_index))
+	elseif a_option == oLang
 		BetterLootingNative.SetInt("iLanguage", a_index)
 		lang = a_index
 		ForcePageReset()
@@ -615,209 +738,48 @@ Event OnOptionMenuAccept(int a_option, int a_index)
 	elseif a_option == oAnchorY
 		BetterLootingNative.SetInt("iAnchorY", a_index)
 		SetMenuOptionValue(a_option, AnchorYName(a_index))
-	elseif a_option == oHLCorpseColor
-		BetterLootingNative.SetInt("iHLCorpseColor", a_index)
-		SetMenuOptionValue(a_option, ColorName(a_index))
-	elseif a_option == oHLColor
-		BetterLootingNative.SetInt("iHLColor", a_index)
-		SetMenuOptionValue(a_option, ColorName(a_index))
 	elseif a_option == oSortBy
 		BetterLootingNative.SetInt("iSortBy", a_index)
 		SetMenuOptionValue(a_option, SortByName(a_index))
+	elseif a_option == oHLColor
+		BetterLootingNative.SetInt("iHLColor", a_index)
+		SetMenuOptionValue(a_option, ColorName(a_index))
+	elseif a_option == oHLCorpseColor
+		BetterLootingNative.SetInt("iHLCorpseColor", a_index)
+		SetMenuOptionValue(a_option, ColorName(a_index))
 	endif
 EndEvent
 
-Function SetKey(string a_key, int a_option, int a_code)
-	int code = a_code
-	if code < 1
-		code = BetterLootingNative.GetDefault(a_key, 1)
-	endif
-	BetterLootingNative.SetInt(a_key, code)
-	SetKeyMapOptionValue(a_option, code)
-EndFunction
-
 Event OnOptionKeyMapChange(int a_option, int a_keyCode, string a_conflictControl, string a_conflictName)
-	if a_option == oKeyAll
-		SetKey("iKeyTakeAll", a_option, a_keyCode)
-	elseif a_option == oKeySearch
-		SetKey("iKeySearch", a_option, a_keyCode)
-	elseif a_option == oScanKey
-		SetKey("iHLScanKey", a_option, a_keyCode)
+	int i = FindKey(a_option)
+	if i >= 0
+		SetKey(aKey[i], a_option, a_keyCode)
 	endif
 EndEvent
 
 Event OnOptionHighlight(int a_option)
+	int i = FindKey(a_option)
+	if i >= 0
+		if i == 7
+			SetInfoText(L("Hold this key to light up nearby objects and lootable corpses. Holding longer keeps refreshing the glow. A short tap still does its normal action.", "Mantenha esta tecla premida para realcar objetos e cadaveres com loot por perto. Manter mais tempo continua a refrescar o brilho. Um toque curto faz a acao normal."))
+		else
+			SetInfoText(L("Key of this action while the loot window is open. Keyboard keys and mouse buttons work. The game does not do anything else with this key while the window is open.", "Tecla desta acao com a janela de loot aberta. Funcionam teclas do teclado e botoes do rato. O jogo nao faz mais nada com esta tecla enquanto a janela esta aberta."))
+		endif
+		return
+	endif
+	i = FindMod(a_option)
+	if i >= 0
+		SetInfoText(L("Modifier that must be held together with the key (None, Shift, Ctrl or Alt).", "Modificador que tem de estar premido junto com a tecla (Nenhum, Shift, Ctrl ou Alt)."))
+		return
+	endif
 	if a_option == oVisual
 		SetInfoText(L("Look of the loot window. The change applies the next time the loot menu opens.", "Visual da janela de loot. A mudanca aplica-se na proxima vez que o menu de loot abrir."))
 	elseif a_option == oLang
 		SetInfoText(L("Language of this menu.", "Idioma deste menu."))
-	elseif a_option == oKeyAll
-		SetInfoText(L("Takes every item. While the loot menu is open this key does nothing else.", "Pega todos os itens. Com o menu de loot aberto esta tecla nao faz mais nada."))
-	elseif a_option == oKeySearch
-		SetInfoText(L("Opens the container normally. While the loot menu is open this key does nothing else.", "Abre o contentor normalmente. Com o menu de loot aberto esta tecla nao faz mais nada."))
 	elseif a_option == oAnchorX
 		SetInfoText(L("Where on the screen the window is anchored, horizontally.", "Ponto do ecra onde a janela fica ancorada, na horizontal."))
 	elseif a_option == oAnchorY
 		SetInfoText(L("Where on the screen the window is anchored, vertically.", "Ponto do ecra onde a janela fica ancorada, na vertical."))
-	elseif a_option == sOpt[15]
-		SetInfoText(L("How strong the glow is. It applies in 5 steps (100, 60, 35, 18 and 8%). Lower it to see the details of the objects.", "Quao forte e o brilho. Aplica-se em 5 niveis (100, 60, 35, 18 e 8%). Reduza para ver os detalhes dos objetos."))
-	elseif a_option == oScanKey
-		SetKey("iHLScanKey", a_option, 0)
-	elseif a_option == oVisual
-		BetterLootingNative.SetInt("iVisual", 0)
-		BetterLootingNative.ApplyVisual()
-		SetMenuOptionValue(a_option, VisualName(0))
-	elseif a_option == oLang
-		BetterLootingNative.SetInt("iLanguage", 0)
-		lang = 0
-		ForcePageReset()
-	endif
-EndEvent
-
-Event OnOptionSliderOpen(int a_option)
-	int i = FindSlider(a_option)
-	if i >= 0
-		SetSliderDialogStartValue(BetterLootingNative.GetInt(sKey[i], 0) as float)
-		SetSliderDialogDefaultValue(BetterLootingNative.GetDefault(sKey[i], 0) as float)
-		SetSliderDialogRange(sMin[i], sMax[i])
-		SetSliderDialogInterval(sStep[i])
-	endif
-EndEvent
-
-Event OnOptionSliderAccept(int a_option, float a_value)
-	int i = FindSlider(a_option)
-	if i >= 0
-		BetterLootingNative.SetInt(sKey[i], a_value as int)
-		SetSliderOptionValue(a_option, a_value, sFmt[i])
-	endif
-EndEvent
-
-Event OnOptionMenuOpen(int a_option)
-	string[] opts
-	int cur = 0
-	int dflt = 0
-	if a_option == oLang
-		opts = new string[2]
-		opts[0] = "English"
-		opts[1] = "Portugues"
-		cur = lang
-	elseif a_option == oVisual
-		opts = new string[2]
-		opts[0] = VisualName(0)
-		opts[1] = VisualName(1)
-		cur = BetterLootingNative.GetInt("iVisual", 0)
-	elseif a_option == oAnchorX
-		opts = new string[3]
-		opts[0] = AnchorXName(0)
-		opts[1] = AnchorXName(1)
-		opts[2] = AnchorXName(2)
-		cur = BetterLootingNative.GetInt("iAnchorX", 0)
-	elseif a_option == oAnchorY
-		opts = new string[3]
-		opts[0] = AnchorYName(0)
-		opts[1] = AnchorYName(1)
-		opts[2] = AnchorYName(2)
-		cur = BetterLootingNative.GetInt("iAnchorY", 0)
-	elseif a_option == oHLCorpseColor
-		opts = new string[5]
-		opts[0] = ColorName(0)
-		opts[1] = ColorName(1)
-		opts[2] = ColorName(2)
-		opts[3] = ColorName(3)
-		opts[4] = ColorName(4)
-		cur = BetterLootingNative.GetInt("iHLCorpseColor", 2)
-		dflt = 2
-	elseif a_option == oHLColor
-		opts = new string[5]
-		opts[0] = ColorName(0)
-		opts[1] = ColorName(1)
-		opts[2] = ColorName(2)
-		opts[3] = ColorName(3)
-		opts[4] = ColorName(4)
-		cur = BetterLootingNative.GetInt("iHLColor", 0)
-	elseif a_option == oSortBy
-		opts = new string[4]
-		opts[0] = SortByName(0)
-		opts[1] = SortByName(1)
-		opts[2] = SortByName(2)
-		opts[3] = SortByName(3)
-		cur = BetterLootingNative.GetInt("iSortBy", 0)
-	else
-		return
-	endif
-	SetMenuDialogOptions(opts)
-	SetMenuDialogStartIndex(cur)
-	SetMenuDialogDefaultIndex(dflt)
-EndEvent
-
-Event OnOptionMenuAccept(int a_option, int a_index)
-	if a_index < 0
-		return
-	endif
-	if a_option == oLang
-		BetterLootingNative.SetInt("iLanguage", a_index)
-		lang = a_index
-		ForcePageReset()
-	elseif a_option == oVisual
-		BetterLootingNative.SetInt("iVisual", a_index)
-		BetterLootingNative.ApplyVisual()
-		SetMenuOptionValue(a_option, VisualName(a_index))
-	elseif a_option == oAnchorX
-		BetterLootingNative.SetInt("iAnchorX", a_index)
-		SetMenuOptionValue(a_option, AnchorXName(a_index))
-	elseif a_option == oAnchorY
-		BetterLootingNative.SetInt("iAnchorY", a_index)
-		SetMenuOptionValue(a_option, AnchorYName(a_index))
-	elseif a_option == oHLCorpseColor
-		BetterLootingNative.SetInt("iHLCorpseColor", a_index)
-		SetMenuOptionValue(a_option, ColorName(a_index))
-	elseif a_option == oHLColor
-		BetterLootingNative.SetInt("iHLColor", a_index)
-		SetMenuOptionValue(a_option, ColorName(a_index))
-	elseif a_option == oSortBy
-		BetterLootingNative.SetInt("iSortBy", a_index)
-		SetMenuOptionValue(a_option, SortByName(a_index))
-	endif
-EndEvent
-
-Function SetKey(string a_key, int a_option, int a_code)
-	int code = a_code
-	if code < 1
-		code = BetterLootingNative.GetDefault(a_key, 1)
-	endif
-	BetterLootingNative.SetInt(a_key, code)
-	SetKeyMapOptionValue(a_option, code)
-EndFunction
-
-Event OnOptionKeyMapChange(int a_option, int a_keyCode, string a_conflictControl, string a_conflictName)
-	if a_option == oKeyAll
-		SetKey("iKeyTakeAll", a_option, a_keyCode)
-	elseif a_option == oKeySearch
-		SetKey("iKeySearch", a_option, a_keyCode)
-	elseif a_option == oScanKey
-		SetKey("iHLScanKey", a_option, a_keyCode)
-	endif
-EndEvent
-
-Event OnOptionHighlight(int a_option)
-	if a_option == oVisual
-		SetInfoText(L("Look of the loot window. The change applies the next time the loot menu opens.", "Visual da janela de loot. A mudanca aplica-se na proxima vez que o menu de loot abrir."))
-	elseif a_option == oLang
-		SetInfoText(L("Language of this menu.", "Idioma deste menu."))
-	elseif a_option == oKeyAll
-		SetInfoText(L("Takes every item. While the loot menu is open this key does nothing else.", "Pega todos os itens. Com o menu de loot aberto esta tecla nao faz mais nada."))
-	elseif a_option == oKeySearch
-		SetInfoText(L("Opens the container normally. While the loot menu is open this key does nothing else.", "Abre o contentor normalmente. Com o menu de loot aberto esta tecla nao faz mais nada."))
-	elseif a_option == oAnchorX
-		SetInfoText(L("Where on the screen the window is anchored, horizontally.", "Ponto do ecra onde a janela fica ancorada, na horizontal."))
-	elseif a_option == oAnchorY
-		SetInfoText(L("Where on the screen the window is anchored, vertically.", "Ponto do ecra onde a janela fica ancorada, na vertical."))
-	elseif a_option == sOpt[15]
-		SetInfoText(L("Strength of the colored fill over the object. If changing it shows no difference, the edge glow is dominating: adjust the edge strength too.", "Forca do preenchimento colorido sobre o objeto. Se alterar nao mostrar diferenca, o contorno luminoso e que domina: ajuste tambem a forca do contorno."))
-	elseif a_option == sOpt[16]
-		SetInfoText(L("Strength of the glowing outline. Lower it if the glow is too bright.", "Forca do contorno luminoso. Reduza se o brilho estiver forte demais."))
-	elseif a_option == oScanKey
-		SetInfoText(L("Hold this key to light up nearby objects and lootable corpses. Holding longer keeps refreshing the glow. A short tap still does its normal action.", "Mantenha esta tecla premida para realcar objetos e cadaveres com loot por perto. Manter mais tempo continua a refrescar o brilho. Um toque curto faz a acao normal."))
 	elseif a_option == oHLCorpseColor
 		SetInfoText(L("Color of the glow on lootable corpses.", "Cor do brilho nos cadaveres com loot."))
 	elseif a_option == oHLColor
@@ -826,5 +788,7 @@ Event OnOptionHighlight(int a_option)
 		SetInfoText(L("Order of the items inside each category (or of the whole list if grouping is off). Quest items always come first.", "Ordem dos itens dentro de cada categoria (ou de toda a lista, se o agrupamento estiver desligado). Itens de missao ficam sempre primeiro."))
 	elseif a_option == sOpt[3]
 		SetInfoText(L("Stops the list after this many items. 0 means all items are listed.", "Para a lista neste numero de itens. 0 lista todos os itens."))
+	elseif a_option == sOpt[15]
+		SetInfoText(L("How strong the glow is. It applies in 5 steps (100, 60, 35, 18 and 8%). Lower it to see the details of the objects.", "Define quanto forte e o brilho. Aplica-se em 5 niveis (100, 60, 35, 18 e 8%). Reduza para ver os detalhes dos objetos."))
 	endif
 EndEvent
