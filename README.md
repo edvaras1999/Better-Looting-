@@ -116,11 +116,8 @@ Releases are built by GitHub Actions (`.github/workflows/build.yml`), Win32 / Re
 
 ## License
 
-GPL-3.0-or-later with the Modding Exception and the GPL-3.0 Linking Exception, as QuickLoot IE and QuickLoot IE LE.
-See [LICENSE](LICENSE), [EXCEPTIONS.md](EXCEPTIONS.md), [MIT](MIT) and [NOTICE.md](NOTICE.md).
+GPL-3.0-or-later with the Modding Exception and the GPL-3.0 Linking Exception, as QuickLoot IE LE.
 
 ## Credits
 
-QuickLoot IE LE by Mhacks79; QuickLoot IE by Miss Corruption and contributors; QuickLootEE by ilian53; QuickLootRE by
-ryan-rsm-mckenzie; Quick Loot 1.1f for LE and libSkyrim; QuickLoot Redesigned; Highlight Objects - EdgeLight Edition;
-Highlight Lootable Corpses by AmazingBuff; SKSE and SkyUI teams. Developed with AI assistance (Claude).
+QuickLoot IE LE by Mhacks79; Quick Loot 1.1f for LE and libSkyrim; QuickLoot Redesigned; Highlight Objects - EdgeLight Edition; Highlight Lootable Corpses by AmazingBuff; SKSE and SkyUI teams. Developed with AI assistance (Claude).
