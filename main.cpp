@@ -29,7 +29,7 @@ public:
 		}
 
 		SetName("BetterLooting");
-		SetVersion(5);
+		SetVersion(13);
 
 		return true;
 	}
@@ -42,6 +42,9 @@ public:
 		const SKSEPapyrusInterface *papyrus = GetInterface(SKSEPapyrusInterface::Version_1);
 		if (papyrus)
 			papyrus->Register(&Papyrus::RegisterFunctions);
+
+		// lista de cadaveres revistados guardada no save
+		Highlight::RegisterSerialization(GetInterface(SKSESerializationInterface::Version_4));
 
 		_MESSAGE("");
 

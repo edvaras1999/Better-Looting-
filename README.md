@@ -9,7 +9,7 @@ Look at a chest, a barrel or a body and its contents show up in a small window n
 Take one item, take everything, use or equip it, or open the container the usual way, without going through
 the inventory screen. Hold a key to light up nearby loot and lootable corpses.
 
-> Status: **v0.12**. Early versions are tested by one person; expect rough edges. See [CHANGES.md](CHANGES.md).
+> Status: **v0.13**. Early versions are tested by one person; expect rough edges. See [CHANGES.md](CHANGES.md).
 
 ## Features
 
@@ -17,12 +17,15 @@ the inventory screen. Hold a key to light up nearby loot and lootable corpses.
   value-per-weight columns, and your carried weight.
 - Two looks: **QuickLoot Redesigned** (default) and the original **QuickLoot IE** window. Switch in the MCM.
 - Take, take only one, take all, use / equip, search (open the container). Every action has a remappable key
-  and modifier for keyboard and mouse.
+  and modifier for keyboard and mouse, and a remappable button and modifier for the **gamepad**, with the right
+  icons in the button bar.
 - Sorting by category and by name, value, weight or value per weight.
 - **Highlight** of the object under the crosshair, with a colored glow (5 colors, 5 intensity steps), filters by
   object type and red for what would be stealing.
-- **Area scan**: hold a key to light up nearby objects and **lootable corpses** (corpses you already searched are
-  hidden). Works even if the crosshair highlight is off.
+- **Area scan**: hold a key (or a gamepad button) to light up nearby objects and **lootable corpses**. Works even if
+  the crosshair highlight is off.
+- **Lootable corpses**: optional filters (quest items, keys, enchanted gear, books, consumables, minimum value), an
+  optional always-on highlight, and the list of corpses you already searched is saved with your game.
 - Full MCM (SkyUI) in English and Portuguese; options are saved in `BetterLooting.ini`.
 - No Papyrus polling: the highlight and use/equip call the game's native functions from the plugin.
 
@@ -49,26 +52,28 @@ that the shaders and the textures were found, and the loot window functions leve
 
 ## Default controls (loot window open)
 
-| Action | Keyboard / mouse |
-|---|---|
-| Take | E |
-| Take only one | Alt+E |
-| Use / equip | Shift+E |
-| Equip in the right hand | Shift + left mouse button |
-| Equip in the left hand | Shift + right mouse button |
-| Take all | C |
-| Search (open the container) | R |
-| Scroll the list | mouse wheel / zoom keys |
-| Area scan (loot window closed) | hold E for 500 ms |
+| Action | Keyboard / mouse | Gamepad |
+|---|---|---|
+| Take | E | A |
+| Take only one | Alt+E | (none) |
+| Use / equip | Shift+E | Y |
+| Equip in the right hand | Shift + left mouse button | RB + Y |
+| Equip in the left hand | Shift + right mouse button | LB + Y |
+| Take all | C | X |
+| Search (open the container) | R | Back |
+| Scroll the list | mouse wheel / zoom keys | D-pad |
+| Area scan (loot window closed) | hold E for 500 ms | (none by default) |
 
 All of the above, except scrolling, can be changed in the MCM (page **Keys**): each action has a key and a modifier
-(none, Shift, Ctrl, Alt). Keyboard keys and mouse buttons are supported. With the window open, the game does nothing
-else with a key that is bound to an action, and its own Activate and Ready Weapon keys do nothing on their own.
-Holding the Ready Weapon key for 2 seconds (window closed) turns the loot window on or off.
+(none, Shift, Ctrl, Alt) for keyboard and mouse, and a button and a modifier (none, LB, RB, LT, RT) for the gamepad.
+With the window open, the game does nothing else with a key or button that is bound to an action, and its own Activate
+and Ready Weapon keys and buttons do nothing on their own. Holding the Ready Weapon key for 2 seconds (window closed)
+turns the loot window on or off.
 
-Use / equip: armor and clothes are equipped; potions, food and ingredients are consumed; ammo is taken whole and
-equipped; one-handed weapons go to the hand you choose, two-handed weapons use either. Books, keys and other items are
-only taken. If your hands come out swapped, swap `iEquipSlotIdRight` and `iEquipSlotIdLeft` in the INI.
+Use / equip: armor and clothes are equipped; potions, food and ingredients are consumed; scrolls and ammo are equipped
+(ammo is taken whole); books are taken and then used, which is **experimental** (if a book is only taken, tell me).
+One-handed weapons go to the hand you choose, two-handed weapons use either. Other items are only taken. If your hands
+come out swapped, swap `iEquipSlotIdRight` and `iEquipSlotIdLeft` in the INI.
 
 ## Configuration
 
@@ -77,24 +82,24 @@ General (language, look, behavior, sorting), Window (size, position, opacity, co
 
 ## Objectives
 
-Near term:
+Done in this version: full gamepad support with icons, filters for lootable corpses, an always-on corpse highlight, the
+searched-corpses list saved with the game, and use for books and scrolls.
 
-- Full **gamepad** support: take, take all, use/equip, search and scrolling, with the right button icons.
-- Filters for lootable corpses (quest items, keys, enchanted gear, minimum value, books, consumables).
-- A permanent (always-on) corpse highlight and a "searched" list that is saved with the game.
-- Use books and scrolls from the loot window.
-- Look into the loot window showing fewer rows than expected for short lists.
-
-Later:
+Next:
 
 - **Phase 3**: survival (EatingSleepingDrinking) and the activation animations patch, integrated into the same plugin.
+- Confirm that books are read when used from the loot window, and improve it if not.
 - Optional KHA-OS settings page, as in QuickLoot IE LE.
+- Fill in the remaining authors in `NOTICE.md` before a public release.
+
+Known limitations: with the **Redesigned** look, a short list can show fewer rows than expected (the original look does
+not do this); it comes from that movie, which has no source.
 
 ## What differs from QuickLoot IE LE
 
 Better Looting needs SkyUI and an ESP (for the MCM and the highlight), which QuickLoot IE LE avoids on purpose.
 Better Looting is built on the code base of Quick Loot 1.1f and speaks QuickLoot IE's window protocol; see
-[NOTICE.md](NOTICE.md). Gamepad support, visibility conditions and exclusions are not complete yet.
+[NOTICE.md](NOTICE.md). Visibility conditions and exclusions are not implemented.
 
 ## Building from source
 
@@ -116,8 +121,11 @@ Releases are built by GitHub Actions (`.github/workflows/build.yml`), Win32 / Re
 
 ## License
 
-GPL-3.0-or-later with the Modding Exception and the GPL-3.0 Linking Exception, as QuickLoot IE LE.
+GPL-3.0-or-later with the Modding Exception and the GPL-3.0 Linking Exception, as QuickLoot IE and QuickLoot IE LE.
+See [LICENSE](LICENSE), [EXCEPTIONS.md](EXCEPTIONS.md), [MIT](MIT) and [NOTICE.md](NOTICE.md).
 
 ## Credits
 
-QuickLoot IE LE by Mhacks79; Quick Loot 1.1f for LE and libSkyrim; QuickLoot Redesigned; Highlight Objects - EdgeLight Edition; Highlight Lootable Corpses by AmazingBuff; SKSE and SkyUI teams. Developed with AI assistance (Claude).
+QuickLoot IE LE by Mhacks79; QuickLoot IE by Miss Corruption and contributors; QuickLootEE by ilian53; QuickLootRE by
+ryan-rsm-mckenzie; Quick Loot 1.1f for LE and libSkyrim; QuickLoot Redesigned; Highlight Objects - EdgeLight Edition;
+Highlight Lootable Corpses by AmazingBuff; SKSE and SkyUI teams. Developed with AI assistance (Claude).

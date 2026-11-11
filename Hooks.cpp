@@ -205,11 +205,22 @@ public:
 PlayerCharacterEx::FnStartActivation PlayerCharacterEx::fnStartActivationOld;
 
 
-// Teclas da janela de loot (v0.12). Com a janela aberta, cada acao tem a sua tecla e o seu modificador
-// (Shift, Ctrl ou Alt), configuraveis. Codigo da tecla: 1-255 = teclado (DirectInput), 256+ = rato.
+// Teclas da janela de loot. Com a janela aberta, cada acao tem a sua tecla e o seu modificador (Shift, Ctrl
+// ou Alt), configuraveis, e tambem o seu botao do comando e modificador do comando (LB, RB, LT ou RT).
+// Codigo da tecla: 1-255 = teclado (DirectInput), 256+ = rato. Botoes do comando: mascara XInput.
 // As teclas que correspondem a uma acao sao retiradas da lista de eventos, para o jogo nao fazer o que
-// elas fariam com a janela fechada (ativar, empunhar arma, atacar...). A tecla de Ativar e a de Empunhar
-// arma do jogo tambem sao retiradas no teclado, para nao pegarem itens por conta propria.
+// elas fariam com a janela fechada (ativar, empunhar arma, atacar...). A tecla/botao de Ativar e de
+// Empunhar arma do jogo tambem sao retirados, para nao pegarem itens por conta propria.
+namespace
+{
+	bool g_usingGamepad = false;
+}
+
+bool Hooks::IsUsingGamepad()
+{
+	return g_usingGamepad;
+}
+
 class PlayerControlsEx : public PlayerControls
 {
 public:
@@ -231,6 +242,8 @@ public:
 
 	EventResult ReceiveEvent_Hook(InputEvent **evn, BSTEventSource<InputEvent *> *source)
 	{
+		Highlight::Tick();
+
 		if (evn && *evn)
 		{
 			FilterEvents(evn);
@@ -271,6 +284,36 @@ public:
 		return 0;
 	}
 
+	static int PadKeyOf(int a_action)
+	{
+		switch (a_action)
+		{
+		case kAct_Take:			return Settings::iPadTake;
+		case kAct_TakeOne:		return Settings::iPadTakeOne;
+		case kAct_Use:			return Settings::iPadUse;
+		case kAct_TakeAll:		return Settings::iPadTakeAll;
+		case kAct_Search:		return Settings::iPadSearch;
+		case kAct_EquipRight:	return Settings::iPadEquipRight;
+		case kAct_EquipLeft:	return Settings::iPadEquipLeft;
+		}
+		return 0;
+	}
+
+	static int PadModOf(int a_action)
+	{
+		switch (a_action)
+		{
+		case kAct_Take:			return Settings::iPadModTake;
+		case kAct_TakeOne:		return Settings::iPadModTakeOne;
+		case kAct_Use:			return Settings::iPadModUse;
+		case kAct_TakeAll:		return Settings::iPadModTakeAll;
+		case kAct_Search:		return Settings::iPadModSearch;
+		case kAct_EquipRight:	return Settings::iPadModEquipRight;
+		case kAct_EquipLeft:	return Settings::iPadModEquipLeft;
+		}
+		return 0;
+	}
+
 	// 0 = nenhum, 1 = Shift, 2 = Ctrl, 3 = Alt; 99 = combinacao que nao usamos
 	static int ActiveModifier(const bool *a_down)
 	{
@@ -285,29 +328,63 @@ public:
 		return 99;
 	}
 
+	// 0 = nenhum, senao o botao modificador premido (0x100 LB, 0x200 RB, 9 LT, 10 RT); 99 = mais de um
+	static int ActivePadModifier(bool a_lb, bool a_rb, bool a_lt, bool a_rt)
+	{
+		int count = 0;
+		int code = 0;
+		if (a_lb) { ++count; code = 0x100; }
+		if (a_rb) { ++count; code = 0x200; }
+		if (a_lt) { ++count; code = 9; }
+		if (a_rt) { ++count; code = 10; }
+
+		if (count == 0) return 0;
+		if (count == 1) return code;
+		return 99;
+	}
+
+	static void RunAction(int a_action, LootMenu *a_menu)
+	{
+		switch (a_action)
+		{
+		case kAct_Take:			a_menu->TakeItem(false, false);	break;
+		case kAct_TakeOne:		a_menu->TakeItem(false, true);	break;
+		case kAct_Use:			a_menu->UseSelected(0);			break;
+		case kAct_TakeAll:		a_menu->TakeAllItems();			break;
+		case kAct_EquipRight:	a_menu->UseSelected(1);			break;
+		case kAct_EquipLeft:	a_menu->UseSelected(2);			break;
+		}
+	}
+
 	static void FilterEvents(InputEvent **evn)
 	{
-		static bool s_down[256] = {};			// estado das teclas do teclado (para os modificadores)
-		static bool s_consumed[512] = {};		// teclas cujo premir foi consumido (consome-se tambem a repeticao e o soltar)
-		static int s_searchCode = -1;			// tecla de Procurar premida e consumida
-		static bool s_searchDone = false;		// Procurar ja disparou neste premir
+		static bool s_down[256] = {};				// estado das teclas do teclado (para os modificadores)
+		static bool s_padLB = false, s_padRB = false, s_padLT = false, s_padRT = false;
+		static bool s_consumedKey[512] = {};		// teclas/botoes do rato cujo premir foi consumido
+		static bool s_consumedPad[65536] = {};		// botoes do comando cujo premir foi consumido
+		static int s_searchId = -1;					// Procurar premido e consumido (teclado: codigo; comando: 100000 + mascara)
+		static bool s_searchDone = false;			// Procurar ja disparou neste premir
 
 		LootMenu *lootMenu = LootMenu::GetSingleton();
 		const bool visible = (lootMenu && lootMenu->IsVisible());
 
-		// teclas de Ativar e de Empunhar arma do jogo (teclado)
-		int gameActivate = -1;
-		int gameReady = -1;
+		// teclas e botoes de Ativar e de Empunhar arma do jogo
+		int gameActivate = -1, gameReady = -1, gamePadActivate = -1, gamePadReady = -1;
 		if (visible)
 		{
 			InputStringHolder *holder = InputStringHolder::GetSingleton();
 			InputMappingManager *mapping = InputMappingManager::GetSingleton();
 			if (holder && mapping)
 			{
-				const UInt32 a = mapping->GetMappedKey(holder->activate, BSInputDevice::kType_Keyboard);
-				const UInt32 r = mapping->GetMappedKey(holder->readyWeapon, BSInputDevice::kType_Keyboard);
-				if (a != InputMappingManager::kInvalid) gameActivate = (int)a;
-				if (r != InputMappingManager::kInvalid) gameReady = (int)r;
+				UInt32 k;
+				k = mapping->GetMappedKey(holder->activate, BSInputDevice::kType_Keyboard);
+				if (k != InputMappingManager::kInvalid) gameActivate = (int)k;
+				k = mapping->GetMappedKey(holder->readyWeapon, BSInputDevice::kType_Keyboard);
+				if (k != InputMappingManager::kInvalid) gameReady = (int)k;
+				k = mapping->GetMappedKey(holder->activate, BSInputDevice::kType_Gamepad);
+				if (k != InputMappingManager::kInvalid) gamePadActivate = (int)k;
+				k = mapping->GetMappedKey(holder->readyWeapon, BSInputDevice::kType_Gamepad);
+				if (k != InputMappingManager::kInvalid) gamePadReady = (int)k;
 			}
 		}
 
@@ -320,28 +397,48 @@ public:
 
 			const bool isKeyboard = (cur->deviceType == BSInputDevice::kType_Keyboard);
 			const bool isMouse = (cur->deviceType == BSInputDevice::kType_Mouse);
+			const bool isPad = (cur->deviceType == BSInputDevice::kType_Gamepad);
 
-			if (cur->eventType == InputEvent::kEventType_Button && (isKeyboard || isMouse))
+			if (cur->eventType == InputEvent::kEventType_Button && (isKeyboard || isMouse || isPad))
 			{
 				ButtonEvent *btn = static_cast<ButtonEvent *>(cur);
-				const UInt32 code = isKeyboard ? btn->keyMask : (256 + btn->keyMask);
+				const UInt32 code = isKeyboard ? btn->keyMask : (isMouse ? (256 + btn->keyMask) : btn->keyMask);
+				const bool codeOk = isPad ? (code < 65536) : (code < 512);
 
-				// estado dos modificadores (Shift, Ctrl, Alt)
+				if (btn->IsDown())
+					g_usingGamepad = isPad;
+
+				// modificadores
 				if (isKeyboard && btn->keyMask < 256)
-					s_down[btn->keyMask] = !btn->IsUp();
-
-				// varrimento: so observa a tecla (nao a consome), por isso o E continua a ativar normalmente
-				if (code == (UInt32)Settings::iHLScanKey)
-					Highlight::OnScanKey(btn->IsDown(), btn->IsUp(), btn->timer, visible);
-
-				if (code < 512)
 				{
-					if (s_consumed[code])
+					s_down[btn->keyMask] = !btn->IsUp();
+				}
+				else if (isPad)
+				{
+					const bool held = !btn->IsUp();
+					if (code == 0x100) s_padLB = held;
+					else if (code == 0x200) s_padRB = held;
+					else if (code == 9) s_padLT = held;
+					else if (code == 10) s_padRT = held;
+				}
+
+				// varrimento: so observa a tecla/botao (nao o consome), por isso o E/A continua a funcionar normalmente
+				if (!isPad && code == (UInt32)Settings::iHLScanKey)
+					Highlight::OnScanKey(btn->IsDown(), btn->IsUp(), btn->timer, visible, false);
+				else if (isPad && Settings::iHLScanPad != 0 && code == (UInt32)Settings::iHLScanPad)
+					Highlight::OnScanKey(btn->IsDown(), btn->IsUp(), btn->timer, visible, true);
+
+				if (codeOk)
+				{
+					bool &consumedFlag = isPad ? s_consumedPad[code] : s_consumedKey[code];
+					const int id = isPad ? (100000 + (int)code) : (int)code;
+
+					if (consumedFlag)
 					{
 						// repeticao ou soltar de uma tecla ja consumida
 						consume = true;
 
-						if ((int)code == s_searchCode)
+						if (id == s_searchId)
 						{
 							const bool reached = (Settings::iSearchHoldMs <= 0) ||
 								(btn->IsPressed() && btn->timer * 1000.0f >= (float)Settings::iSearchHoldMs);
@@ -355,40 +452,49 @@ public:
 
 						if (btn->IsUp())
 						{
-							s_consumed[code] = false;
-							if ((int)code == s_searchCode)
-								s_searchCode = -1;
+							consumedFlag = false;
+							if (id == s_searchId)
+								s_searchId = -1;
 						}
 					}
 					else if (visible && btn->IsDown())
 					{
-						const int modifier = ActiveModifier(s_down);
-
 						int matched = -1;
-						for (int act = 0; act < kAct_Count; ++act)
+
+						if (isPad)
 						{
-							if ((UInt32)KeyOf(act) == code && ModOf(act) == modifier)
+							const int modifier = ActivePadModifier(s_padLB, s_padRB, s_padLT, s_padRT);
+							for (int act = 0; act < kAct_Count; ++act)
 							{
-								matched = act;
-								break;
+								const int key = PadKeyOf(act);
+								if (key != 0 && (UInt32)key == code && PadModOf(act) == modifier)
+								{
+									matched = act;
+									break;
+								}
+							}
+						}
+						else
+						{
+							const int modifier = ActiveModifier(s_down);
+							for (int act = 0; act < kAct_Count; ++act)
+							{
+								if ((UInt32)KeyOf(act) == code && ModOf(act) == modifier)
+								{
+									matched = act;
+									break;
+								}
 							}
 						}
 
 						if (matched >= 0)
 						{
 							consume = true;
-							s_consumed[code] = true;
+							consumedFlag = true;
 
-							switch (matched)
+							if (matched == kAct_Search)
 							{
-							case kAct_Take:			lootMenu->TakeItem(false, false);	break;
-							case kAct_TakeOne:		lootMenu->TakeItem(false, true);	break;
-							case kAct_Use:			lootMenu->UseSelected(0);			break;
-							case kAct_TakeAll:		lootMenu->TakeAllItems();			break;
-							case kAct_EquipRight:	lootMenu->UseSelected(1);			break;
-							case kAct_EquipLeft:	lootMenu->UseSelected(2);			break;
-							case kAct_Search:
-								s_searchCode = (int)code;
+								s_searchId = id;
 								s_searchDone = false;
 								if (Settings::iSearchHoldMs <= 0)
 								{
@@ -396,14 +502,18 @@ public:
 									Highlight::MarkSearched(lootMenu->GetContainerRef());
 									PlayerCharacterEx::OpenContainer();
 								}
-								break;
+							}
+							else
+							{
+								RunAction(matched, lootMenu);
 							}
 						}
-						else if (isKeyboard && ((int)code == gameActivate || (int)code == gameReady))
+						else if ((isKeyboard && ((int)code == gameActivate || (int)code == gameReady)) ||
+							(isPad && ((int)code == gamePadActivate || (int)code == gamePadReady)))
 						{
-							// a tecla de Ativar/Empunhar do jogo nao faz nada por conta propria com a janela aberta
+							// o Ativar/Empunhar arma do jogo nao faz nada por conta propria com a janela aberta
 							consume = true;
-							s_consumed[code] = true;
+							consumedFlag = true;
 						}
 					}
 				}
@@ -576,7 +686,7 @@ namespace Hooks
 #endif
 		ReadyWeaponHandlerEx::InitHook();			// [R] or (X)
 		PlayerCharacterEx::InitHook();				// [E] or (A)
-		PlayerControlsEx::InitHook();				// teclas da janela de loot (teclado e rato)
+		PlayerControlsEx::InitHook();				// teclas da janela de loot (teclado, rato e comando)
 
 		// crosshair text patches
 		TESObjectCONTEx::InitHook();

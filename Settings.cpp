@@ -86,6 +86,31 @@ bool	Settings::bHLPotion = true;
 bool	Settings::bHLScroll = true;
 bool	Settings::bHLSoulGem = true;
 
+int		Settings::iPadTake = 0x1000;			// A
+int		Settings::iPadModTake = 0;
+int		Settings::iPadTakeOne = 0;
+int		Settings::iPadModTakeOne = 0;
+int		Settings::iPadUse = 0x8000;				// Y
+int		Settings::iPadModUse = 0;
+int		Settings::iPadTakeAll = 0x4000;			// X
+int		Settings::iPadModTakeAll = 0;
+int		Settings::iPadSearch = 0x20;			// Back
+int		Settings::iPadModSearch = 0;
+int		Settings::iPadEquipRight = 0x8000;		// RB + Y
+int		Settings::iPadModEquipRight = 0x200;
+int		Settings::iPadEquipLeft = 0x8000;		// LB + Y
+int		Settings::iPadModEquipLeft = 0x100;
+int		Settings::iHLScanPad = 0;
+
+bool	Settings::bHLCorpseFilter = false;
+bool	Settings::bHLCFQuest = true;
+bool	Settings::bHLCFKey = true;
+bool	Settings::bHLCFEnchanted = true;
+bool	Settings::bHLCFBooks = true;
+bool	Settings::bHLCFConsumables = false;
+int		Settings::iHLCMinValue = 250;
+bool	Settings::bHLCorpseAlways = false;
+
 int		Settings::iVisual = 0;			// Redesigned
 int		Settings::iLanguage = 0;		// English
 
@@ -182,6 +207,29 @@ namespace
 		{ "bHLScroll",			&Settings::bHLScroll,			true,	1, 0, 1 },
 		{ "bHLSoulGem",			&Settings::bHLSoulGem,			true,	1, 0, 1 },
 
+		{ "iPadTake",		&Settings::iPadTake,		false,	4096, 0, 65535 },
+		{ "iPadModTake",		&Settings::iPadModTake,		false,	0, 0, 65535 },
+		{ "iPadTakeOne",		&Settings::iPadTakeOne,		false,	0, 0, 65535 },
+		{ "iPadModTakeOne",		&Settings::iPadModTakeOne,		false,	0, 0, 65535 },
+		{ "iPadUse",		&Settings::iPadUse,		false,	32768, 0, 65535 },
+		{ "iPadModUse",		&Settings::iPadModUse,		false,	0, 0, 65535 },
+		{ "iPadTakeAll",		&Settings::iPadTakeAll,		false,	16384, 0, 65535 },
+		{ "iPadModTakeAll",		&Settings::iPadModTakeAll,		false,	0, 0, 65535 },
+		{ "iPadSearch",		&Settings::iPadSearch,		false,	32, 0, 65535 },
+		{ "iPadModSearch",		&Settings::iPadModSearch,		false,	0, 0, 65535 },
+		{ "iPadEquipRight",		&Settings::iPadEquipRight,		false,	32768, 0, 65535 },
+		{ "iPadModEquipRight",		&Settings::iPadModEquipRight,		false,	512, 0, 65535 },
+		{ "iPadEquipLeft",		&Settings::iPadEquipLeft,		false,	32768, 0, 65535 },
+		{ "iPadModEquipLeft",		&Settings::iPadModEquipLeft,		false,	256, 0, 65535 },
+		{ "iHLScanPad",		&Settings::iHLScanPad,		false,	0, 0, 65535 },
+		{ "bHLCorpseFilter",		&Settings::bHLCorpseFilter,		true,	0, 0, 1 },
+		{ "bHLCFQuest",		&Settings::bHLCFQuest,		true,	1, 0, 1 },
+		{ "bHLCFKey",		&Settings::bHLCFKey,		true,	1, 0, 1 },
+		{ "bHLCFEnchanted",		&Settings::bHLCFEnchanted,		true,	1, 0, 1 },
+		{ "bHLCFBooks",		&Settings::bHLCFBooks,		true,	1, 0, 1 },
+		{ "bHLCFConsumables",		&Settings::bHLCFConsumables,		true,	0, 0, 1 },
+		{ "bHLCorpseAlways",		&Settings::bHLCorpseAlways,		true,	0, 0, 1 },
+		{ "iHLCMinValue",		&Settings::iHLCMinValue,		false,	250, 0, 100000 },
 		{ "iVisual",				&Settings::iVisual,					false,	0,		0,		1 },
 		{ "iLanguage",				&Settings::iLanguage,				false,	0,		0,		1 },
 	};

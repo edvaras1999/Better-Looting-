@@ -2,6 +2,8 @@
 #include "Settings.h"
 #include "Highlight.h"
 #include "Equip.h"
+#include "Hooks.h"
+#include <string>
 #include <SKSE/PluginAPI.h>
 #include <SKSE/DebugLog.h>
 #include <SKSE/GameRTTI.h>
@@ -1088,7 +1090,8 @@ void LootMenu::UseSelected(int a_hand)
 
 	const FormType type = form->formType;
 	const bool usable = type == FormType::Armor || type == FormType::Weapon || type == FormType::Ammo ||
-		type == FormType::Potion || type == FormType::Ingredient || type == FormType::ScrollItem;
+		type == FormType::Potion || type == FormType::Ingredient || type == FormType::ScrollItem ||
+		type == FormType::Book;
 
 	if (!usable)
 	{
@@ -1295,6 +1298,54 @@ void LootMenu::InvokeScaleform_SetIndex()
 
 static const char kSwfRoot[] = "_root.lootMenu";
 
+// indice do icone do botao do comando na barra de botoes (mascara XInput -> quadro do SWF)
+static int GamepadArtIndex(int a_mask)
+{
+	switch (a_mask)
+	{
+	case 0x0001: return 266;	// cima
+	case 0x0002: return 267;	// baixo
+	case 0x0004: return 268;	// esquerda
+	case 0x0008: return 269;	// direita
+	case 0x0010: return 270;	// Start
+	case 0x0020: return 271;	// Back
+	case 0x0040: return 272;	// analogico esquerdo
+	case 0x0080: return 273;	// analogico direito
+	case 0x0100: return 274;	// LB
+	case 0x0200: return 275;	// RB
+	case 0x1000: return 276;	// A
+	case 0x2000: return 277;	// B
+	case 0x4000: return 278;	// X
+	case 0x8000: return 279;	// Y
+	case 9: return 280;			// LT
+	case 10: return 281;		// RT
+	}
+	return -1;
+}
+
+static std::string KeyModifierPrefix(int a_mod)
+{
+	switch (a_mod)
+	{
+	case 1: return "Shift + ";
+	case 2: return "Ctrl + ";
+	case 3: return "Alt + ";
+	}
+	return "";
+}
+
+static std::string PadModifierPrefix(int a_mod)
+{
+	switch (a_mod)
+	{
+	case 0x100: return "LB + ";
+	case 0x200: return "RB + ";
+	case 9: return "LT + ";
+	case 10: return "RT + ";
+	}
+	return "";
+}
+
 // IE: o SWF recebe um objecto de definicoes em init()
 void LootMenu::UI_Init(GFxMovieView *a_view)
 {
@@ -1464,32 +1515,61 @@ void LootMenu::UI_Open(GFxMovieView *a_view)
 	a_view->SetVariable("_root.lootMenu.itemList.dataProvider", items);
 	a_view->Invoke("_root.lootMenu.itemList.invalidateData", nullptr, nullptr, 0);
 
-	// barra de botoes: o indice e o numero da tecla (o SWF desenha o icone dessa tecla)
+	// barra de botoes: o indice e o numero do icone (teclado: codigo da tecla; rato: 256 + botao; comando: 266 a 281)
 	{
 		static char *sSteal = g_gameSettingCollection->Get("sSteal")->data.s;
 		static char *sTake = g_gameSettingCollection->Get("sTake")->data.s;
 		static char *sSearch = g_gameSettingCollection->Get("sSearch")->data.s;
 		Setting *takeAllSetting = g_gameSettingCollection->Get("sTakeAll");
 		const char *sTakeAll = (takeAllSetting && takeAllSetting->data.s) ? takeAllSetting->data.s : "Take All";
+		const char *sUse = (Settings::iLanguage == 1) ? "Usar" : "Use";
 
-		bool isStolen = m_containerRef->IsOffLimits();
+		const bool isStolen = m_containerRef->IsOffLimits();
+		const bool pad = Hooks::IsUsingGamepad();
 
-		InputStringHolder *holder = InputStringHolder::GetSingleton();
-		UInt32 keyTake = InputMappingManager::GetSingleton()->GetMappedKey(holder->activate, BSInputDevice::kType_Keyboard);
-		if (keyTake == InputMappingManager::kInvalid)
-			keyTake = 18;	// E
+		// pegar (ou roubar), pegar tudo, usar/equipar, procurar
+		struct ButtonInfo
+		{
+			const char	*label;
+			int			key, mod;
+			int			padKey, padMod;
+		};
+		const ButtonInfo infos[4] = {
+			{ isStolen ? sSteal : sTake, Settings::iKeyTake, Settings::iModTake, Settings::iPadTake, Settings::iPadModTake },
+			{ sTakeAll, Settings::iKeyTakeAll, Settings::iModTakeAll, Settings::iPadTakeAll, Settings::iPadModTakeAll },
+			{ sUse, Settings::iKeyUse, Settings::iModUse, Settings::iPadUse, Settings::iPadModUse },
+			{ sSearch, Settings::iKeySearch, Settings::iModSearch, Settings::iPadSearch, Settings::iPadModSearch }
+		};
 
 		GFxValue buttons;
 		a_view->CreateArray(&buttons);
 
-		const char *labels[3] = { isStolen ? sSteal : sTake, sTakeAll, sSearch };
-		double keys[3] = { (double)keyTake, (double)Settings::iKeyTakeAll, (double)Settings::iKeySearch };
-		for (int i = 0; i < 3; ++i)
+		for (int i = 0; i < 4; ++i)
 		{
+			const ButtonInfo &info = infos[i];
+
+			int art = -1;
+			std::string text;
+			if (pad)
+			{
+				art = GamepadArtIndex(info.padKey);
+				text = PadModifierPrefix(info.padMod);
+			}
+			else
+			{
+				art = info.key;
+				text = KeyModifierPrefix(info.mod);
+			}
+
+			if (art < 0)
+				continue;		// sem botao atribuido neste dispositivo
+
+			text += info.label;
+
 			GFxValue label;
-			SetGFxString(a_view, label, labels[i]);
-			GFxValue index = keys[i];
-			GFxValue stolenFlag = isStolen;
+			SetGFxString(a_view, label, text.c_str());
+			GFxValue index = (double)art;
+			GFxValue stolenFlag = (i == 0) ? isStolen : false;
 
 			GFxValue button;
 			a_view->CreateObject(&button);

@@ -3,6 +3,18 @@
 Better Looting is an improved version of QuickLoot IE LE (see [NOTICE.md](NOTICE.md)). This file lists what
 it adds or changes, newest first.
 
+## 0.13
+
+- **Gamepad.** Every loot window action has a remappable gamepad button and modifier (LB, RB, LT, RT), shown with the
+  right icons in the button bar when you last used the gamepad. Defaults: A take, X take all, Y use / equip, Back
+  search, RB + Y and LB + Y equip in the right and left hands. The area scan can be given a gamepad button.
+- **Corpse loot filters**: only highlight corpses that have quest items, keys, enchanted gear, books, consumables, or
+  an item worth a minimum value (optional).
+- **Always-on corpse highlight** (optional): lootable corpses glow without holding a key.
+- **Searched corpses are saved with the game** (SKSE co-save), so they stay hidden after loading.
+- **Books** can be used from the loot window (experimental).
+- Button bar shows the modifier next to the action (for example "Shift + Use").
+
 ## 0.12
 
 - **Remappable keys.** Every action of the loot window (take, take one, use/equip, take all, search, equip in

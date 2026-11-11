@@ -27,6 +27,12 @@ string[] aEN
 string[] aPT
 int[] aOptKey
 int[] aOptMod
+string[] pKey
+string[] pMod
+int[] pOptKey
+int[] pOptMod
+int[] padMask
+string[] padName
 
 ; ---------------- menus ----------------
 int oLang
@@ -68,10 +74,10 @@ string Function L(string en, string pt)
 EndFunction
 
 Function BuildTables()
-	tKey = new string[34]
-	tEN = new string[34]
-	tPT = new string[34]
-	tOpt = new int[34]
+	tKey = new string[41]
+	tEN = new string[41]
+	tPT = new string[41]
+	tOpt = new int[41]
 	tKey[0] = "bDisableInCombat"
 	tEN[0] = "Disable in combat"
 	tPT[0] = "Desativar em combate"
@@ -174,14 +180,35 @@ Function BuildTables()
 	tKey[33] = "bHLCorpseHideSearched"
 	tEN[33] = "Hide corpses already searched"
 	tPT[33] = "Esconder cadaveres ja revistados"
-	sKey = new string[16]
-	sEN = new string[16]
-	sPT = new string[16]
-	sMin = new float[16]
-	sMax = new float[16]
-	sStep = new float[16]
-	sFmt = new string[16]
-	sOpt = new int[16]
+	tKey[34] = "bHLCorpseFilter"
+	tEN[34] = "Only highlight corpses with interesting loot"
+	tPT[34] = "Realcar so cadaveres com loot interessante"
+	tKey[35] = "bHLCFQuest"
+	tEN[35] = "Interesting: quest items"
+	tPT[35] = "Interessante: itens de missao"
+	tKey[36] = "bHLCFKey"
+	tEN[36] = "Interesting: keys"
+	tPT[36] = "Interessante: chaves"
+	tKey[37] = "bHLCFEnchanted"
+	tEN[37] = "Interesting: enchanted weapons and armor"
+	tPT[37] = "Interessante: armas e armaduras encantadas"
+	tKey[38] = "bHLCFBooks"
+	tEN[38] = "Interesting: books"
+	tPT[38] = "Interessante: livros"
+	tKey[39] = "bHLCFConsumables"
+	tEN[39] = "Interesting: potions, food, ingredients and scrolls"
+	tPT[39] = "Interessante: pocoes, comida, ingredientes e pergaminhos"
+	tKey[40] = "bHLCorpseAlways"
+	tEN[40] = "Always highlight lootable corpses (no key needed)"
+	tPT[40] = "Realcar sempre os cadaveres com loot (sem tecla)"
+	sKey = new string[17]
+	sEN = new string[17]
+	sPT = new string[17]
+	sMin = new float[17]
+	sMax = new float[17]
+	sStep = new float[17]
+	sFmt = new string[17]
+	sOpt = new int[17]
 	sKey[0] = "iScale"
 	sEN[0] = "Window scale"
 	sPT[0] = "Escala da janela"
@@ -294,6 +321,13 @@ Function BuildTables()
 	sMax[15] = 100.0
 	sStep[15] = 5.0
 	sFmt[15] = "{0}%"
+	sKey[16] = "iHLCMinValue"
+	sEN[16] = "Interesting: minimum item value (0 = off)"
+	sPT[16] = "Interessante: valor minimo do item (0 = desligado)"
+	sMin[16] = 0.0
+	sMax[16] = 5000.0
+	sStep[16] = 50.0
+	sFmt[16] = "{0}"
 	aKey = new string[8]
 	aMod = new string[8]
 	aEN = new string[8]
@@ -332,6 +366,62 @@ Function BuildTables()
 	aMod[7] = ""
 	aEN[7] = "Area scan key (hold)"
 	aPT[7] = "Tecla do varrimento (manter)"
+	pKey = new string[8]
+	pMod = new string[8]
+	pOptKey = new int[8]
+	pOptMod = new int[8]
+	pKey[0] = "iPadTake"
+	pMod[0] = "iPadModTake"
+	pKey[1] = "iPadTakeOne"
+	pMod[1] = "iPadModTakeOne"
+	pKey[2] = "iPadUse"
+	pMod[2] = "iPadModUse"
+	pKey[3] = "iPadTakeAll"
+	pMod[3] = "iPadModTakeAll"
+	pKey[4] = "iPadSearch"
+	pMod[4] = "iPadModSearch"
+	pKey[5] = "iPadEquipRight"
+	pMod[5] = "iPadModEquipRight"
+	pKey[6] = "iPadEquipLeft"
+	pMod[6] = "iPadModEquipLeft"
+	pKey[7] = "iHLScanPad"
+	pMod[7] = ""
+	padMask = new int[17]
+	padName = new string[17]
+	padMask[0] = 0
+	padName[0] = "None"
+	padMask[1] = 4096
+	padName[1] = "A"
+	padMask[2] = 8192
+	padName[2] = "B"
+	padMask[3] = 16384
+	padName[3] = "X"
+	padMask[4] = 32768
+	padName[4] = "Y"
+	padMask[5] = 256
+	padName[5] = "LB"
+	padMask[6] = 512
+	padName[6] = "RB"
+	padMask[7] = 9
+	padName[7] = "LT"
+	padMask[8] = 10
+	padName[8] = "RT"
+	padMask[9] = 32
+	padName[9] = "Back"
+	padMask[10] = 16
+	padName[10] = "Start"
+	padMask[11] = 64
+	padName[11] = "L stick click"
+	padMask[12] = 128
+	padName[12] = "R stick click"
+	padMask[13] = 1
+	padName[13] = "D-pad up"
+	padMask[14] = 2
+	padName[14] = "D-pad down"
+	padMask[15] = 4
+	padName[15] = "D-pad left"
+	padMask[16] = 8
+	padName[16] = "D-pad right"
 
 	; ids de opcoes por preencher: -1 (o id 0 e valido, por isso nao serve de "vazio")
 	int n = 0
@@ -357,6 +447,12 @@ Function BuildTables()
 	oSortBy = -1
 	oHLColor = -1
 	oHLCorpseColor = -1
+	n = 0
+	while n < pOptKey.Length
+		pOptKey[n] = -1
+		pOptMod[n] = -1
+		n += 1
+	endwhile
 EndFunction
 
 string Function VisualName(int v)
@@ -424,6 +520,65 @@ string Function AnchorYName(int v)
 		return L("Bottom", "Base")
 	endif
 	return L("Top", "Topo")
+EndFunction
+
+int Function PadIndex(int mask)
+	int i = 0
+	while i < padMask.Length
+		if padMask[i] == mask
+			return i
+		endif
+		i += 1
+	endwhile
+	return 0
+EndFunction
+
+string Function PadModName(int mask)
+	if mask == 256
+		return "LB"
+	elseif mask == 512
+		return "RB"
+	elseif mask == 9
+		return "LT"
+	elseif mask == 10
+		return "RT"
+	endif
+	return L("None", "Nenhum")
+EndFunction
+
+int Function PadModMask(int index)
+	if index == 1
+		return 256
+	elseif index == 2
+		return 512
+	elseif index == 3
+		return 9
+	elseif index == 4
+		return 10
+	endif
+	return 0
+EndFunction
+
+int Function PadModIndex(int mask)
+	if mask == 256
+		return 1
+	elseif mask == 512
+		return 2
+	elseif mask == 9
+		return 3
+	elseif mask == 10
+		return 4
+	endif
+	return 0
+EndFunction
+
+Function AddPadRow(int i)
+	pOptKey[i] = AddMenuOption(L(aEN[i], aPT[i]) + " - " + L("gamepad", "comando"), padName[PadIndex(BetterLootingNative.GetInt(pKey[i], 0))])
+	if pMod[i] != ""
+		pOptMod[i] = AddMenuOption(L(aEN[i], aPT[i]) + " - " + L("gamepad modifier", "modificador do comando"), PadModName(BetterLootingNative.GetInt(pMod[i], 0)))
+	else
+		AddEmptyOption()
+	endif
 EndFunction
 
 Function AddToggleRange(int first, int last)
@@ -494,6 +649,16 @@ Event OnPageReset(string a_page)
 		AddHeaderOption("")
 		AddKeyRow(7)
 		AddSliderRange(10, 10)
+		AddHeaderOption(L("Gamepad (loot window open)", "Comando (janela de loot aberta)"))
+		AddHeaderOption(L("Gamepad modifiers", "Modificadores do comando"))
+		i = 0
+		while i < 7
+			AddPadRow(i)
+			i += 1
+		endwhile
+		AddHeaderOption(L("Area scan on the gamepad", "Varrimento no comando"))
+		AddHeaderOption("")
+		AddPadRow(7)
 	elseif a_page == Pages[3]
 		AddHeaderOption(L("Crosshair highlight", "Realce na mira"))
 		AddToggleRange(12, 12)
@@ -508,8 +673,12 @@ Event OnPageReset(string a_page)
 		AddSliderRange(11, 13)
 		AddHeaderOption(L("Lootable corpses", "Cadaveres com loot"))
 		AddToggleRange(32, 33)
+		AddToggleRange(40, 40)
 		oHLCorpseColor = AddMenuOption(L("Corpse color", "Cor dos cadaveres"), ColorName(BetterLootingNative.GetInt("iHLCorpseColor", 2)))
 		AddSliderRange(14, 14)
+		AddHeaderOption(L("Corpse loot filters", "Filtros do loot dos cadaveres"))
+		AddToggleRange(34, 39)
+		AddSliderRange(16, 16)
 	endif
 EndEvent
 
@@ -539,6 +708,28 @@ int Function FindKey(int a_option)
 	int i = 0
 	while i < aOptKey.Length
 		if aOptKey[i] == a_option
+			return i
+		endif
+		i += 1
+	endwhile
+	return -1
+EndFunction
+
+int Function FindPadKey(int a_option)
+	int i = 0
+	while i < pOptKey.Length
+		if pOptKey[i] == a_option
+			return i
+		endif
+		i += 1
+	endwhile
+	return -1
+EndFunction
+
+int Function FindPadMod(int a_option)
+	int i = 0
+	while i < pOptMod.Length
+		if pOptMod[i] == a_option
 			return i
 		endif
 		i += 1
@@ -598,6 +789,20 @@ Event OnOptionDefault(int a_option)
 		SetKey(aKey[i], a_option, 0)
 		return
 	endif
+	i = FindPadKey(a_option)
+	if i >= 0
+		int dpk = BetterLootingNative.GetDefault(pKey[i], 0)
+		BetterLootingNative.SetInt(pKey[i], dpk)
+		SetMenuOptionValue(a_option, padName[PadIndex(dpk)])
+		return
+	endif
+	i = FindPadMod(a_option)
+	if i >= 0
+		int dpm = BetterLootingNative.GetDefault(pMod[i], 0)
+		BetterLootingNative.SetInt(pMod[i], dpm)
+		SetMenuOptionValue(a_option, PadModName(dpm))
+		return
+	endif
 	i = FindMod(a_option)
 	if i >= 0
 		int dm = BetterLootingNative.GetDefault(aMod[i], 0)
@@ -653,8 +858,28 @@ Event OnOptionMenuOpen(int a_option)
 	string[] opts
 	int cur = 0
 	int dflt = 0
+	int pk = FindPadKey(a_option)
+	int pm = FindPadMod(a_option)
 	int k = FindMod(a_option)
-	if k >= 0
+	if pk >= 0
+		opts = new string[17]
+		int j = 0
+		while j < 17
+			opts[j] = padName[j]
+			j += 1
+		endwhile
+		cur = PadIndex(BetterLootingNative.GetInt(pKey[pk], 0))
+		dflt = PadIndex(BetterLootingNative.GetDefault(pKey[pk], 0))
+	elseif pm >= 0
+		opts = new string[5]
+		opts[0] = PadModName(0)
+		opts[1] = PadModName(256)
+		opts[2] = PadModName(512)
+		opts[3] = PadModName(9)
+		opts[4] = PadModName(10)
+		cur = PadModIndex(BetterLootingNative.GetInt(pMod[pm], 0))
+		dflt = PadModIndex(BetterLootingNative.GetDefault(pMod[pm], 0))
+	elseif k >= 0
 		opts = new string[4]
 		opts[0] = ModName2(0)
 		opts[1] = ModName2(1)
@@ -720,8 +945,16 @@ Event OnOptionMenuAccept(int a_option, int a_index)
 	if a_index < 0
 		return
 	endif
+	int pk = FindPadKey(a_option)
+	int pm = FindPadMod(a_option)
 	int k = FindMod(a_option)
-	if k >= 0
+	if pk >= 0
+		BetterLootingNative.SetInt(pKey[pk], padMask[a_index])
+		SetMenuOptionValue(a_option, padName[a_index])
+	elseif pm >= 0
+		BetterLootingNative.SetInt(pMod[pm], PadModMask(a_index))
+		SetMenuOptionValue(a_option, PadModName(PadModMask(a_index)))
+	elseif k >= 0
 		BetterLootingNative.SetInt(aMod[k], a_index)
 		SetMenuOptionValue(a_option, ModName2(a_index))
 	elseif a_option == oLang
@@ -767,6 +1000,16 @@ Event OnOptionHighlight(int a_option)
 		endif
 		return
 	endif
+	i = FindPadKey(a_option)
+	if i >= 0
+		SetInfoText(L("Gamepad button of this action while the loot window is open. None disables it on the gamepad.", "Botao do comando desta acao com a janela de loot aberta. Nenhum desativa-a no comando."))
+		return
+	endif
+	i = FindPadMod(a_option)
+	if i >= 0
+		SetInfoText(L("Button that must be held together with the gamepad button (None, LB, RB, LT or RT).", "Botao que tem de estar premido junto com o botao do comando (Nenhum, LB, RB, LT ou RT)."))
+		return
+	endif
 	i = FindMod(a_option)
 	if i >= 0
 		SetInfoText(L("Modifier that must be held together with the key (None, Shift, Ctrl or Alt).", "Modificador que tem de estar premido junto com a tecla (Nenhum, Shift, Ctrl ou Alt)."))
@@ -788,6 +1031,8 @@ Event OnOptionHighlight(int a_option)
 		SetInfoText(L("Order of the items inside each category (or of the whole list if grouping is off). Quest items always come first.", "Ordem dos itens dentro de cada categoria (ou de toda a lista, se o agrupamento estiver desligado). Itens de missao ficam sempre primeiro."))
 	elseif a_option == sOpt[3]
 		SetInfoText(L("Stops the list after this many items. 0 means all items are listed.", "Para a lista neste numero de itens. 0 lista todos os itens."))
+	elseif a_option == sOpt[16]
+		SetInfoText(L("With the filters on, a corpse also counts as interesting if it has an item worth at least this much.", "Com os filtros ligados, um cadaver tambem conta como interessante se tiver um item que valha pelo menos isto."))
 	elseif a_option == sOpt[15]
 		SetInfoText(L("How strong the glow is. It applies in 5 steps (100, 60, 35, 18 and 8%). Lower it to see the details of the objects.", "Define quanto forte e o brilho. Aplica-se em 5 niveis (100, 60, 35, 18 e 8%). Reduza para ver os detalhes dos objetos."))
 	endif

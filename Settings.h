@@ -57,6 +57,33 @@ struct Settings
 	static int	iEquipSlotIdRight;	// identificador da mao direita em Actor.EquipItemEx
 	static int	iEquipSlotIdLeft;	// identificador da mao esquerda em Actor.EquipItemEx
 
+	// comando (gamepad): mascara do botao XInput (0 = sem botao). Modificador: 0 = nenhum, 0x100 = LB, 0x200 = RB, 9 = LT, 10 = RT.
+	static int	iPadTake;
+	static int	iPadModTake;
+	static int	iPadTakeOne;
+	static int	iPadModTakeOne;
+	static int	iPadUse;
+	static int	iPadModUse;
+	static int	iPadTakeAll;
+	static int	iPadModTakeAll;
+	static int	iPadSearch;
+	static int	iPadModSearch;
+	static int	iPadEquipRight;
+	static int	iPadModEquipRight;
+	static int	iPadEquipLeft;
+	static int	iPadModEquipLeft;
+	static int	iHLScanPad;			// botao do varrimento no comando (0 = sem botao)
+
+	// filtros dos cadaveres (so contam com bHLCorpseFilter ligado)
+	static bool	bHLCorpseFilter;
+	static bool	bHLCFQuest;
+	static bool	bHLCFKey;
+	static bool	bHLCFEnchanted;
+	static bool	bHLCFBooks;
+	static bool	bHLCFConsumables;
+	static int	iHLCMinValue;		// valor minimo de um item (0 = ignorar)
+	static bool	bHLCorpseAlways;	// realce permanente dos cadaveres
+
 	// visual: 0 = Redesigned, 1 = QuickLootIE original
 	static int	iVisual;
 	// idioma do MCM: 0 = English, 1 = Portugues

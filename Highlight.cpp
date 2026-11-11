@@ -5,6 +5,7 @@
 #include <SKSE/GameForms.h>
 #include <SKSE/GameObjects.h>
 #include <SKSE/GameReferences.h>
+#include <SKSE/GameExtraData.h>
 #include <SKSE/PapyrusInvoke.h>
 #include <SKSE/SKSEEvents.h>
 #include <Skyrim/SkyrimVM.h>
@@ -13,6 +14,7 @@
 #include <Windows.h>
 #include <algorithm>
 #include <cstdio>
+#include <map>
 #include <set>
 #include <vector>
 
@@ -209,7 +211,151 @@ namespace
 		ApplyShader(ref, color, slot, Settings::iHLCrosshairMs * 0.001f);
 	}
 
-	// cadaver com loot: morto, com 3D, com itens e (opcionalmente) ainda nao revistado
+	// item valido para levar (mesma ideia do menu de loot)
+	bool IsValidLootForm(TESForm *item)
+	{
+		if (!item || item->Is(FormType::LeveledItem))
+			return false;
+
+		if (item->Is(FormType::Light))
+		{
+			TESObjectLIGH *light = static_cast<TESObjectLIGH *>(item);
+			if (!light->CanBeCarried())
+				return false;
+		}
+		else if (!item->IsPlayable())
+		{
+			return false;
+		}
+
+		TESFullName *fullName = DYNAMIC_CAST<TESFullName *>(item);
+		if (!fullName)
+			return false;
+
+		const char *name = fullName->GetFullName();
+		return name && name[0];
+	}
+
+	bool IsEnchantedItem(TESForm *form, InventoryEntryData *entry)
+	{
+		if (!form || !(form->IsArmor() || form->IsWeapon()))
+			return false;
+
+		if (entry && entry->extraList && !entry->extraList->empty())
+		{
+			BaseExtraList *baseExtraList = entry->extraList->front();
+			ExtraEnchantment *exEnchant = baseExtraList ? baseExtraList->GetExtraData<ExtraEnchantment>() : nullptr;
+			if (exEnchant && exEnchant->enchant)
+				return true;
+		}
+
+		TESEnchantableForm *enchantForm = DYNAMIC_CAST<TESEnchantableForm *>(form);
+		return enchantForm && enchantForm->enchantment;
+	}
+
+	bool FilterActive()
+	{
+		return Settings::bHLCorpseFilter && (Settings::bHLCFQuest || Settings::bHLCFKey || Settings::bHLCFEnchanted ||
+			Settings::bHLCFBooks || Settings::bHLCFConsumables || Settings::iHLCMinValue > 0);
+	}
+
+	bool ItemMatchesFilter(TESForm *item, InventoryEntryData *entry)
+	{
+		const FormType t = item->formType;
+
+		if (Settings::bHLCFQuest && entry && entry->IsQuestItem())
+			return true;
+		if (Settings::bHLCFKey && t == FormType::Key)
+			return true;
+		if (Settings::bHLCFEnchanted && IsEnchantedItem(item, entry))
+			return true;
+		if (Settings::bHLCFBooks && t == FormType::Book)
+			return true;
+		if (Settings::bHLCFConsumables && (t == FormType::Potion || t == FormType::Ingredient || t == FormType::ScrollItem))
+			return true;
+
+		if (Settings::iHLCMinValue > 0)
+		{
+			SInt32 value = 0;
+			if (entry)
+			{
+				value = entry->GetValue();
+			}
+			else
+			{
+				TESValueForm *valueForm = DYNAMIC_CAST<TESValueForm *>(item);
+				if (valueForm)
+					value = valueForm->value;
+			}
+
+			if (value >= Settings::iHLCMinValue)
+				return true;
+		}
+
+		return false;
+	}
+
+	struct LootInfo
+	{
+		SInt32				count;
+		InventoryEntryData	*entry;
+	};
+
+	// O cadaver tem loot? Sem filtros, qualquer item valido serve; com filtros, so os que combinam.
+	// Le o contentor base e as alteracoes sem criar nem mudar nada.
+	bool HasInterestingLoot(TESObjectREFR *ref)
+	{
+		const bool filtering = FilterActive();
+
+		std::map<TESForm *, LootInfo> items;
+
+		TESContainer *container = ref->GetContainer();
+		if (container)
+		{
+			TESContainer::Entry *entry = nullptr;
+			UInt32 index = 0;
+			while (container->GetContainerItemAt(index++, entry))
+			{
+				if (!entry || !IsValidLootForm(entry->form))
+					continue;
+
+				LootInfo &info = items[entry->form];
+				info.count += entry->count;
+			}
+		}
+
+		ExtraContainerChanges *exChanges = ref->extraData.GetExtraData<ExtraContainerChanges>();
+		InventoryChanges *changes = exChanges ? exChanges->changes : nullptr;
+		if (changes && changes->entryList)
+		{
+			for (InventoryEntryData *pEntry : *changes->entryList)
+			{
+				if (!pEntry || !IsValidLootForm(pEntry->baseForm))
+					continue;
+
+				LootInfo &info = items[pEntry->baseForm];
+				info.count += pEntry->GetCount();
+				if (!info.entry)
+					info.entry = pEntry;
+			}
+		}
+
+		for (const auto &node : items)
+		{
+			if (node.second.count <= 0)
+				continue;
+
+			if (!filtering)
+				return true;
+
+			if (ItemMatchesFilter(node.first, node.second.entry))
+				return true;
+		}
+
+		return false;
+	}
+
+	// cadaver com loot: morto, com 3D, com itens (e que passam os filtros) e (opcionalmente) ainda nao revistado
 	bool IsLootableCorpse(TESObjectREFR *ref)
 	{
 		Actor *actor = static_cast<Actor *>(ref);
@@ -223,8 +369,7 @@ namespace
 		if (Settings::bHLCorpseHideSearched && g_searched.find(ref->formID) != g_searched.end())
 			return false;
 
-		// sem itens nao ha o que levar (nao cria o contentor, so conta)
-		return ref->GetNumItems(false, false) > 0;
+		return HasInterestingLoot(ref);
 	}
 
 	struct Candidate
@@ -235,7 +380,7 @@ namespace
 		bool			stealable;
 	};
 
-	void VisitCell(TESObjectCELL *cell, float px, float py, float pz, std::vector<Candidate> &out)
+	void VisitCell(TESObjectCELL *cell, float px, float py, float pz, bool corpsesOnly, std::vector<Candidate> &out)
 	{
 		if (!cell)
 			return;
@@ -266,7 +411,7 @@ namespace
 			}
 			else
 			{
-				if (d2 > objectR2)
+				if (corpsesOnly || d2 > objectR2)
 					continue;
 
 				const FormType type = ref->baseForm->formType;
@@ -286,9 +431,9 @@ namespace
 	}
 
 	// varre as celulas carregadas a volta do jogador e realca o que encontra
-	void Scan()
+	void Scan(bool corpsesOnly)
 	{
-		if (!g_ready || !Settings::bHLScanEnabled || !g_thePlayer || !g_thePlayer->parentCell)
+		if (!g_ready || (!corpsesOnly && !Settings::bHLScanEnabled) || !g_thePlayer || !g_thePlayer->parentCell)
 			return;
 
 		const float px = g_thePlayer->pos.x;
@@ -301,7 +446,7 @@ namespace
 		TESObjectCELL *playerCell = g_thePlayer->parentCell;
 		if (playerCell->IsInterior() || !g_TES || !g_TES->gridCellArray)
 		{
-			VisitCell(playerCell, px, py, pz, found);
+			VisitCell(playerCell, px, py, pz, corpsesOnly, found);
 		}
 		else
 		{
@@ -309,7 +454,7 @@ namespace
 			for (UInt32 y = 0; y < grid->size; ++y)
 			{
 				for (UInt32 x = 0; x < grid->size; ++x)
-					VisitCell(grid->Get(x, y), px, py, pz, found);
+					VisitCell(grid->Get(x, y), px, py, pz, corpsesOnly, found);
 			}
 		}
 
@@ -319,7 +464,7 @@ namespace
 		if (found.size() < limit)
 			limit = found.size();
 
-		const float seconds = Settings::iHLScanMs * 0.001f;
+		const float seconds = corpsesOnly ? 2.0f : Settings::iHLScanMs * 0.001f;
 		const UInt32 scanSlots = kSlots - kCrosshairSlots;
 
 		for (size_t i = 0; i < limit; ++i)
@@ -432,46 +577,133 @@ void Highlight::Init()
 }
 
 
-void Highlight::OnScanKey(bool a_down, bool a_up, float a_heldSeconds, bool a_lootMenuVisible)
+void Highlight::OnScanKey(bool a_down, bool a_up, float a_heldSeconds, bool a_lootMenuVisible, bool a_pad)
 {
-	static bool s_active = false;
-	static float s_nextAt = 0.0f;
+	// estados separados para o teclado/rato e para o comando
+	static bool s_active[2] = { false, false };
+	static float s_nextAt[2] = { 0.0f, 0.0f };
+
+	const int idx = a_pad ? 1 : 0;
 
 	if (!g_ready || !Settings::bHLScanEnabled)
 	{
-		s_active = false;
+		s_active[idx] = false;
 		return;
 	}
 
-	// com o menu de loot aberto o E pega itens: nao ha varrimento
+	// com o menu de loot aberto o botao de pegar esta em uso: nao ha varrimento
 	if (a_lootMenuVisible)
 	{
-		s_active = false;
+		s_active[idx] = false;
 		return;
 	}
 
 	if (a_down)
 	{
-		s_active = true;
-		s_nextAt = Settings::iHLScanHoldMs * 0.001f;
+		s_active[idx] = true;
+		s_nextAt[idx] = Settings::iHLScanHoldMs * 0.001f;
 	}
 
 	if (a_up)
 	{
-		s_active = false;
+		s_active[idx] = false;
 		return;
 	}
 
-	if (!s_active || a_heldSeconds < s_nextAt)
+	if (!s_active[idx] || a_heldSeconds < s_nextAt[idx])
 		return;
 
-	Scan();
+	Scan(false);
 
 	// mantido premido: refresca antes de o brilho acabar
 	float interval = Settings::iHLScanMs * 0.001f - 0.8f;
 	if (interval < 0.5f)
 		interval = 0.5f;
-	s_nextAt = a_heldSeconds + interval;
+	s_nextAt[idx] = a_heldSeconds + interval;
+}
+
+
+void Highlight::Tick()
+{
+	if (!g_ready || !Settings::bHLCorpseAlways || !Settings::bHLCorpses)
+		return;
+
+	static DWORD s_last = 0;
+	const DWORD now = GetTickCount();
+	if (now - s_last < 1000)
+		return;
+
+	s_last = now;
+	Scan(true);
+}
+
+
+//===================================================
+// lista de cadaveres revistados guardada no save (SKSE cosave)
+//===================================================
+namespace
+{
+	const UInt32 kRecordSearched = 'SRCH';
+
+	void OnSerializationRevert(SKSESerializationInterface *)
+	{
+		g_searched.clear();
+	}
+
+	void OnSerializationSave(SKSESerializationInterface *a_intfc)
+	{
+		if (!a_intfc->OpenRecord(kRecordSearched, 1))
+			return;
+
+		UInt32 count = (UInt32)g_searched.size();
+		a_intfc->WriteRecordData(&count, sizeof(count));
+		for (UInt32 id : g_searched)
+			a_intfc->WriteRecordData(&id, sizeof(id));
+	}
+
+	void OnSerializationLoad(SKSESerializationInterface *a_intfc)
+	{
+		g_searched.clear();
+
+		UInt32 type = 0, version = 0, length = 0;
+		while (a_intfc->GetNextRecordInfo(&type, &version, &length))
+		{
+			if (type != kRecordSearched)
+				continue;
+
+			UInt32 count = 0;
+			if (a_intfc->ReadRecordData(&count, sizeof(count)) != sizeof(count) || count > 100000)
+				continue;
+
+			for (UInt32 i = 0; i < count; ++i)
+			{
+				UInt32 id = 0;
+				if (a_intfc->ReadRecordData(&id, sizeof(id)) != sizeof(id))
+					break;
+
+				UInt32 resolved = 0;
+				if (a_intfc->ResolveFormId(id, &resolved))
+					g_searched.insert(resolved);
+			}
+		}
+
+		_MESSAGE("Highlight: %u cadaveres revistados carregados do save", (unsigned)g_searched.size());
+	}
+}
+
+
+void Highlight::RegisterSerialization(const SKSESerializationInterface *a_intfc)
+{
+	if (!a_intfc)
+	{
+		_MESSAGE("AVISO: sem interface de serializacao; os cadaveres revistados nao ficam guardados no save");
+		return;
+	}
+
+	a_intfc->SetUniqueID('BLTR');
+	a_intfc->SetRevertCallback(OnSerializationRevert);
+	a_intfc->SetSaveCallback(OnSerializationSave);
+	a_intfc->SetLoadCallback(OnSerializationLoad);
 }
 
 
