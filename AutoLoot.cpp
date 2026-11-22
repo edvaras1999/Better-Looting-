@@ -8,6 +8,7 @@
 #include <Skyrim/FileIO/TESDataHandler.h>
 #include <Windows.h>
 #include <algorithm>
+#include <cctype>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -467,7 +468,7 @@ namespace
 
 		const float glowRadius = (float)Settings::iALGlowRadius;
 		const float pickRadius = (float)Settings::iALPickupRadius;
-		const float maxRadius = std::max(glowRadius, pickRadius);
+		const float maxRadius = (glowRadius > pickRadius ? glowRadius : pickRadius);
 		const float maxR2 = maxRadius * maxRadius;
 
 		for (TESObjectREFR *ref : cell->objectList)
