@@ -707,6 +707,17 @@ void Highlight::RegisterSerialization(const SKSESerializationInterface *a_intfc)
 }
 
 
+void Highlight::Glow(TESObjectREFR *a_ref, int a_color, float a_seconds)
+{
+	if (!g_ready || !a_ref)
+		return;
+
+	const UInt32 scanSlots = kSlots - kCrosshairSlots;
+	const UInt32 slot = kCrosshairSlots + (g_scanSlot++ % scanSlots);
+	ApplyShader(a_ref, a_color, slot, a_seconds);
+}
+
+
 void Highlight::MarkSearched(TESObjectREFR *a_ref)
 {
 	if (a_ref && a_ref->formType == FormType::Character)

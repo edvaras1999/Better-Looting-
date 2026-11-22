@@ -9,7 +9,7 @@ Look at a chest, a barrel or a body and its contents show up in a small window n
 Take one item, take everything, use or equip it, or open the container the usual way, without going through
 the inventory screen. Hold a key to light up nearby loot and lootable corpses.
 
-> Status: **v0.13**. Early versions are tested by one person; expect rough edges. See [CHANGES.md](CHANGES.md).
+> Status: **v0.14**. Early versions are tested by one person; expect rough edges. See [CHANGES.md](CHANGES.md).
 
 ## Features
 
@@ -26,6 +26,9 @@ the inventory screen. Hold a key to light up nearby loot and lootable corpses.
   the crosshair highlight is off.
 - **Lootable corpses**: optional filters (quest items, keys, enchanted gear, books, consumables, minimum value), an
   optional always-on highlight, and the list of corpses you already searched is saved with your game.
+- **Auto-loot** (off by default): picks up loose objects and harvests flora by itself, and makes them glow, following
+  your rules: 30 item types, each with its own pick-up and glow switches, glow color and thresholds (minimum value,
+  value per weight, armor rating, weapon damage), plus name filters and forbid lists. See below.
 - Full MCM (SkyUI) in English and Portuguese; options are saved in `BetterLooting.ini`.
 - No Papyrus polling: the highlight and use/equip call the game's native functions from the plugin.
 
@@ -41,7 +44,7 @@ the inventory screen. Hold a key to light up nearby loot and lootable corpses.
 
 Install the release archive with your mod manager. It contains:
 
-- `Data/SKSE/Plugins/BetterLooting.dll` and `BetterLooting.ini`
+- `Data/SKSE/Plugins/BetterLooting.dll`, `BetterLooting.ini` and `BetterLooting_AutoLoot.ini`
 - `Data/BetterLooting.esp` (keep it **enabled**: it holds the MCM quest and the glow shaders) and `Data/SEQ/BetterLooting.seq`
 - `Data/Scripts/BetterLootingNative.pex`, `BetterLootingMCM.pex`
 - `Data/Interface/LootMenuRedesigned.swf`, `LootMenuIE.swf`
@@ -75,20 +78,47 @@ Use / equip: armor and clothes are equipped; potions, food and ingredients are c
 One-handed weapons go to the hand you choose, two-handed weapons use either. Other items are only taken. If your hands
 come out swapped, swap `iEquipSlotIdRight` and `iEquipSlotIdLeft` in the INI.
 
+## Auto-loot
+
+Turn it on in the MCM (page **Auto-loot**) and choose what you want in the pages **Auto types**, **Auto colors** and
+**Auto limits**. Everything is off until you turn a type on.
+
+- **What it touches:** loose objects, flora (it harvests them) and, optionally, ore veins (you need a pickaxe equipped).
+  **Never** corpses, containers, doors, levers or anything owned by someone (that would be stealing). It does nothing
+  in combat or with the loot window open.
+- **How it decides**, for each object near you: the forbid lists always win; a match in the allow lists is always
+  picked up and lit; otherwise the type decides (Pick, Glow, color) and every limit of the type must be met.
+- **30 types:** one-handed and two-handed weapons, bows, staves, ammo, heavy and light armor, clothing, shields,
+  jewelry, potions, poisons, food, ingredients, scrolls, spell tomes, skill books, other books, keys, empty and filled
+  soul gems, gems, ingots, loose ore, lockpicks, gold, torches, other misc items, flora, ore veins.
+- **Per type:** pick up, glow, color, minimum value, minimum value per weight, minimum armor rating (armor types),
+  minimum damage (weapons and ammo).
+- **Rules file:** `BetterLooting_AutoLoot.ini` holds the per-type values (the MCM edits them) and the lists you edit by
+  hand: name filters (`exact:`, `contains:`, `starts:`, `ends:`), form filters (`Plugin.esp|0x...`), and forbid lists for
+  forms, names and activators (flora and ore veins).
+- **Activation:** always on (MCM), a key or gamepad button that turns it on and off, or a key or button you hold. By
+  default there are no keys: set them in the MCM.
+- **Notes:** books open when they are picked up (so those types are better left off); pick-ups are rate limited and an
+  object that cannot be picked up is not retried for 15 seconds.
+- **Not included:** a classified storage (everything goes into your inventory) and emptying corpses or containers.
+
 ## Configuration
 
-Everything is in the MCM (**Better Looting**) and in `BetterLooting.ini`, which the MCM writes to. Pages:
-General (language, look, behavior, sorting), Window (size, position, opacity, columns), Keys, Highlight.
+Everything is in the MCM (**Better Looting**) and in `BetterLooting.ini` and `BetterLooting_AutoLoot.ini`, which the MCM
+writes to. Pages: General (language, look, behavior, sorting), Window (size, position, opacity, columns), Keys, Highlight,
+and four for auto-loot (Auto-loot, Auto types, Auto colors, Auto limits).
 
 ## Objectives
 
-Done in this version: full gamepad support with icons, filters for lootable corpses, an always-on corpse highlight, the
+Done in this version: auto-loot with per-type rules, thresholds, name and form filters and forbid lists.
+Done before: full gamepad support with icons, filters for lootable corpses, an always-on corpse highlight, the
 searched-corpses list saved with the game, and use for books and scrolls.
 
 Next:
 
 - **Phase 3**: survival (EatingSleepingDrinking) and the activation animations patch, integrated into the same plugin.
 - Confirm that books are read when used from the loot window, and improve it if not.
+- Auto-loot: classified storage, and an optional spell as a second way to trigger it.
 - Optional KHA-OS settings page, as in QuickLoot IE LE.
 - Fill in the remaining authors in `NOTICE.md` before a public release.
 

@@ -3,6 +3,17 @@
 Better Looting is an improved version of QuickLoot IE LE (see [NOTICE.md](NOTICE.md)). This file lists what
 it adds or changes, newest first.
 
+## 0.14
+
+- **Auto-loot.** Picks up loose objects and harvests flora by itself, and makes them glow, following per-type rules:
+  30 item types, each with pick-up and glow switches, a glow color and thresholds (minimum value, value per weight,
+  armor rating, weapon damage), plus name filters (exact, contains, starts with, ends with), form filters and
+  forbid lists for forms, names and activators (flora and ore veins). Never touches corpses, containers, doors, levers
+  or anything owned by someone, and does nothing in combat or with the loot window open.
+- Activation: always on, a toggle key or gamepad button, or a hold key or button.
+- New files: `BetterLooting_AutoLoot.ini` (rules) and four MCM pages for auto-loot.
+- Classified storage is not part of this version: everything goes into the player's inventory.
+
 ## 0.13
 
 - **Gamepad.** Every loot window action has a remappable gamepad button and modifier (LB, RB, LT, RT), shown with the

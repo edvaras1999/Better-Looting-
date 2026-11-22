@@ -198,3 +198,6 @@ bool operator<(const ItemData &a, const ItemData &b);
 
 // ordem da lista de loot (usa as definicoes de ordenacao)
 bool ItemSortLess(const ItemData &a, const ItemData &b);
+
+// tipo de item (ItemData::Type) de um formulario base, sem criar um ItemData
+int ItemTypeOfForm(TESForm *a_form);

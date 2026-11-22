@@ -23,6 +23,9 @@ namespace Highlight
 	// chamado a cada lote de eventos de input: faz o realce permanente dos cadaveres (limitado a 1 por segundo)
 	void Tick();
 
+	// da brilho a uma referencia na cor dada (0-4) durante a_seconds (usa os shaders do varrimento)
+	void Glow(TESObjectREFR *a_ref, int a_color, float a_seconds);
+
 	// o cadaver deixa de ser realcado (foi revistado)
 	void MarkSearched(TESObjectREFR *a_ref);
 }

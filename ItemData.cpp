@@ -827,3 +827,9 @@ static ItemData::Type GetItemType(TESForm *form)
 
 	return type;
 }
+
+
+int ItemTypeOfForm(TESForm *a_form)
+{
+	return a_form ? (int)GetItemType(a_form) : (int)ItemData::kType_None;
+}

@@ -84,6 +84,18 @@ struct Settings
 	static int	iHLCMinValue;		// valor minimo de um item (0 = ignorar)
 	static bool	bHLCorpseAlways;	// realce permanente dos cadaveres
 
+	// apanhar automatico (as regras por tipo estao em BetterLooting_AutoLoot.ini)
+	static bool	bAutoLoot;			// funcao disponivel
+	static bool	bALAlways;			// funciona sempre (sem tecla)
+	static int	iALPickupRadius;	// raio para apanhar
+	static int	iALGlowRadius;		// raio para o brilho
+	static int	iALMaxPerTick;		// maximo de apanhas por passagem (meio segundo)
+	static int	iALHoldMs;			// tempo a manter a tecla premida
+	static int	iALToggleKey;		// tecla que liga/desliga (0 = nenhuma; codigos como as outras teclas)
+	static int	iALHoldKey;			// tecla que se mantem premida (0 = nenhuma)
+	static int	iALPadToggle;		// botao do comando que liga/desliga (0 = nenhum)
+	static int	iALPadHold;			// botao do comando que se mantem premido (0 = nenhum)
+
 	// visual: 0 = Redesigned, 1 = QuickLootIE original
 	static int	iVisual;
 	// idioma do MCM: 0 = English, 1 = Portugues
@@ -132,4 +144,7 @@ struct Settings
 	static bool SetAndSave(const char *name, int val);		// memoria + BetterLooting.ini
 
 	static void Load();
+
+	// BetterLooting_AutoLoot.ini (ao lado da DLL): regras do apanhar automatico
+	static const char *GetAutoLootIniPath();
 };

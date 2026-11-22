@@ -12,6 +12,7 @@
 #include "LootMenu.h"
 #include "Settings.h"
 #include "Highlight.h"
+#include "AutoLoot.h"
 
 //========================================================
 // input patches
@@ -243,6 +244,7 @@ public:
 	EventResult ReceiveEvent_Hook(InputEvent **evn, BSTEventSource<InputEvent *> *source)
 	{
 		Highlight::Tick();
+		AutoLoot::Tick();
 
 		if (evn && *evn)
 		{
@@ -427,6 +429,22 @@ public:
 					Highlight::OnScanKey(btn->IsDown(), btn->IsUp(), btn->timer, visible, false);
 				else if (isPad && Settings::iHLScanPad != 0 && code == (UInt32)Settings::iHLScanPad)
 					Highlight::OnScanKey(btn->IsDown(), btn->IsUp(), btn->timer, visible, true);
+
+				// apanhar automatico: tecla/botao de ligar-desligar e de manter premido (so observa)
+				if (!isPad)
+				{
+					if (Settings::iALToggleKey != 0 && code == (UInt32)Settings::iALToggleKey && btn->IsDown())
+						AutoLoot::OnToggleKey(visible);
+					if (Settings::iALHoldKey != 0 && code == (UInt32)Settings::iALHoldKey)
+						AutoLoot::OnHoldKey(btn->IsDown(), btn->IsUp(), btn->timer, visible, false);
+				}
+				else
+				{
+					if (Settings::iALPadToggle != 0 && code == (UInt32)Settings::iALPadToggle && btn->IsDown())
+						AutoLoot::OnToggleKey(visible);
+					if (Settings::iALPadHold != 0 && code == (UInt32)Settings::iALPadHold)
+						AutoLoot::OnHoldKey(btn->IsDown(), btn->IsUp(), btn->timer, visible, true);
+				}
 
 				if (codeOk)
 				{

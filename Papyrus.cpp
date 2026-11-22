@@ -5,6 +5,7 @@
 #include "Papyrus.h"
 #include "Settings.h"
 #include "LootMenu.h"
+#include "AutoLoot.h"
 
 //========================================================
 // funcoes nativas usadas pelo MCM (BetterLootingMCM.psc)
@@ -42,6 +43,19 @@ namespace
 		LootMenu::RequestVisualReload();
 	}
 
+	SInt32 N_GetRule(BSFixedString section, BSFixedString key, SInt32 defaultValue)
+	{
+		int v = 0;
+		if (AutoLoot::GetRule(section.c_str(), key.c_str(), v))
+			return v;
+		return defaultValue;
+	}
+
+	void N_SetRule(BSFixedString section, BSFixedString key, SInt32 value)
+	{
+		AutoLoot::SetRule(section.c_str(), key.c_str(), value);
+	}
+
 	void N_Log(BSFixedString msg)
 	{
 		_MESSAGE("papyrus: %s", msg.c_str());
@@ -55,6 +69,8 @@ bool Papyrus::RegisterFunctions(VMState *state)
 	SKSEScript::RegisterFunction("BetterLootingNative", "GetDefault", &N_GetDefault, state);
 	SKSEScript::RegisterFunction("BetterLootingNative", "SetInt", &N_SetInt, state);
 	SKSEScript::RegisterFunction("BetterLootingNative", "ApplyVisual", &N_ApplyVisual, state);
+	SKSEScript::RegisterFunction("BetterLootingNative", "GetRule", &N_GetRule, state);
+	SKSEScript::RegisterFunction("BetterLootingNative", "SetRule", &N_SetRule, state);
 	SKSEScript::RegisterFunction("BetterLootingNative", "Log", &N_Log, state);
 
 	_MESSAGE("Funcoes Papyrus registadas (BetterLootingNative)");

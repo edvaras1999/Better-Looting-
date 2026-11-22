@@ -111,6 +111,17 @@ bool	Settings::bHLCFConsumables = false;
 int		Settings::iHLCMinValue = 250;
 bool	Settings::bHLCorpseAlways = false;
 
+bool	Settings::bAutoLoot = false;
+bool	Settings::bALAlways = false;
+int		Settings::iALPickupRadius = 200;
+int		Settings::iALGlowRadius = 1500;
+int		Settings::iALMaxPerTick = 2;
+int		Settings::iALHoldMs = 300;
+int		Settings::iALToggleKey = 0;
+int		Settings::iALHoldKey = 0;
+int		Settings::iALPadToggle = 0;
+int		Settings::iALPadHold = 0;
+
 int		Settings::iVisual = 0;			// Redesigned
 int		Settings::iLanguage = 0;		// English
 
@@ -230,6 +241,16 @@ namespace
 		{ "bHLCFConsumables",		&Settings::bHLCFConsumables,		true,	0, 0, 1 },
 		{ "bHLCorpseAlways",		&Settings::bHLCorpseAlways,		true,	0, 0, 1 },
 		{ "iHLCMinValue",		&Settings::iHLCMinValue,		false,	250, 0, 100000 },
+		{ "bAutoLoot",				&Settings::bAutoLoot,				true,	0, 0, 1 },
+		{ "bALAlways",				&Settings::bALAlways,				true,	0, 0, 1 },
+		{ "iALPickupRadius",		&Settings::iALPickupRadius,			false,	200, 50, 1000 },
+		{ "iALGlowRadius",			&Settings::iALGlowRadius,			false,	1500, 300, 5000 },
+		{ "iALMaxPerTick",			&Settings::iALMaxPerTick,			false,	2, 1, 10 },
+		{ "iALHoldMs",				&Settings::iALHoldMs,				false,	300, 0, 2000 },
+		{ "iALToggleKey",			&Settings::iALToggleKey,			false,	0, 0, 511 },
+		{ "iALHoldKey",				&Settings::iALHoldKey,				false,	0, 0, 511 },
+		{ "iALPadToggle",			&Settings::iALPadToggle,			false,	0, 0, 65535 },
+		{ "iALPadHold",				&Settings::iALPadHold,				false,	0, 0, 65535 },
 		{ "iVisual",				&Settings::iVisual,					false,	0,		0,		1 },
 		{ "iLanguage",				&Settings::iLanguage,				false,	0,		0,		1 },
 	};
@@ -292,6 +313,22 @@ namespace
 		}
 		return path;
 	}
+}
+
+
+const char *Settings::GetAutoLootIniPath()
+{
+	static char path[MAX_PATH] = "";
+	if (!path[0])
+	{
+		strcpy_s(path, MAX_PATH, IniPath());
+		char *dot = strrchr(path, '.');
+		if (dot)
+			strcpy_s(dot, (size_t)(path + MAX_PATH - dot), "_AutoLoot.ini");
+		else
+			strcat_s(path, MAX_PATH, "_AutoLoot.ini");
+	}
+	return path;
 }
 
 

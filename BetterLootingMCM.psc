@@ -34,6 +34,22 @@ int[] pOptMod
 int[] padMask
 string[] padName
 
+; ---------------- apanhar automatico ----------------
+string[] rName
+string[] rEN
+string[] rPT
+int[] rExtra
+int[] oPick
+int[] oGlow
+int[] oColor
+int[] oMinVal
+int[] oMinVpw
+int[] oMinX
+int oALKeyToggle
+int oALKeyHold
+int oALPadToggle
+int oALPadHold
+
 ; ---------------- menus ----------------
 int oLang
 int oVisual
@@ -59,11 +75,15 @@ Event OnVersionUpdate(int a_version)
 EndEvent
 
 Function BuildPages()
-	Pages = new string[4]
+	Pages = new string[8]
 	Pages[0] = "General / Geral"
 	Pages[1] = "Window / Janela"
 	Pages[2] = "Keys / Teclas"
 	Pages[3] = "Highlight / Realce"
+	Pages[4] = "Auto-loot / Apanhar"
+	Pages[5] = "Auto types / Tipos"
+	Pages[6] = "Auto colors / Cores"
+	Pages[7] = "Auto limits / Limiares"
 EndFunction
 
 string Function L(string en, string pt)
@@ -74,10 +94,10 @@ string Function L(string en, string pt)
 EndFunction
 
 Function BuildTables()
-	tKey = new string[41]
-	tEN = new string[41]
-	tPT = new string[41]
-	tOpt = new int[41]
+	tKey = new string[43]
+	tEN = new string[43]
+	tPT = new string[43]
+	tOpt = new int[43]
 	tKey[0] = "bDisableInCombat"
 	tEN[0] = "Disable in combat"
 	tPT[0] = "Desativar em combate"
@@ -201,14 +221,20 @@ Function BuildTables()
 	tKey[40] = "bHLCorpseAlways"
 	tEN[40] = "Always highlight lootable corpses (no key needed)"
 	tPT[40] = "Realcar sempre os cadaveres com loot (sem tecla)"
-	sKey = new string[17]
-	sEN = new string[17]
-	sPT = new string[17]
-	sMin = new float[17]
-	sMax = new float[17]
-	sStep = new float[17]
-	sFmt = new string[17]
-	sOpt = new int[17]
+	tKey[41] = "bAutoLoot"
+	tEN[41] = "Auto-loot (picks up and lights what your rules allow)"
+	tPT[41] = "Apanhar automatico (apanha e da brilho ao que as regras permitem)"
+	tKey[42] = "bALAlways"
+	tEN[42] = "Always on (no key needed)"
+	tPT[42] = "Sempre ligado (sem tecla)"
+	sKey = new string[21]
+	sEN = new string[21]
+	sPT = new string[21]
+	sMin = new float[21]
+	sMax = new float[21]
+	sStep = new float[21]
+	sFmt = new string[21]
+	sOpt = new int[21]
 	sKey[0] = "iScale"
 	sEN[0] = "Window scale"
 	sPT[0] = "Escala da janela"
@@ -328,6 +354,34 @@ Function BuildTables()
 	sMax[16] = 5000.0
 	sStep[16] = 50.0
 	sFmt[16] = "{0}"
+	sKey[17] = "iALPickupRadius"
+	sEN[17] = "Auto-loot pick-up radius"
+	sPT[17] = "Raio de apanhar do apanhar automatico"
+	sMin[17] = 50.0
+	sMax[17] = 1000.0
+	sStep[17] = 10.0
+	sFmt[17] = "{0}"
+	sKey[18] = "iALGlowRadius"
+	sEN[18] = "Auto-loot glow radius"
+	sPT[18] = "Raio do brilho do apanhar automatico"
+	sMin[18] = 300.0
+	sMax[18] = 5000.0
+	sStep[18] = 100.0
+	sFmt[18] = "{0}"
+	sKey[19] = "iALMaxPerTick"
+	sEN[19] = "Maximum pick-ups every half second"
+	sPT[19] = "Maximo de apanhas a cada meio segundo"
+	sMin[19] = 1.0
+	sMax[19] = 10.0
+	sStep[19] = 1.0
+	sFmt[19] = "{0}"
+	sKey[20] = "iALHoldMs"
+	sEN[20] = "Time to hold the hold key (0 = one tap)"
+	sPT[20] = "Tempo a manter a tecla premida (0 = um toque)"
+	sMin[20] = 0.0
+	sMax[20] = 2000.0
+	sStep[20] = 50.0
+	sFmt[20] = "{0} ms"
 	aKey = new string[8]
 	aMod = new string[8]
 	aEN = new string[8]
@@ -447,6 +501,150 @@ Function BuildTables()
 	oSortBy = -1
 	oHLColor = -1
 	oHLCorpseColor = -1
+	rName = new string[30]
+	rEN = new string[30]
+	rPT = new string[30]
+	rExtra = new int[30]
+	oPick = new int[30]
+	oGlow = new int[30]
+	oColor = new int[30]
+	oMinVal = new int[30]
+	oMinVpw = new int[30]
+	oMinX = new int[30]
+	rName[0] = "Weapon1H"
+	rEN[0] = "One-handed weapons"
+	rPT[0] = "Armas de uma mao"
+	rExtra[0] = 2
+	rName[1] = "Weapon2H"
+	rEN[1] = "Two-handed weapons"
+	rPT[1] = "Armas de duas maos"
+	rExtra[1] = 2
+	rName[2] = "Bow"
+	rEN[2] = "Bows and crossbows"
+	rPT[2] = "Arcos e bestas"
+	rExtra[2] = 2
+	rName[3] = "Staff"
+	rEN[3] = "Staves"
+	rPT[3] = "Cajados"
+	rExtra[3] = 2
+	rName[4] = "Ammo"
+	rEN[4] = "Ammo"
+	rPT[4] = "Municao"
+	rExtra[4] = 2
+	rName[5] = "ArmorHeavy"
+	rEN[5] = "Heavy armor"
+	rPT[5] = "Armadura pesada"
+	rExtra[5] = 1
+	rName[6] = "ArmorLight"
+	rEN[6] = "Light armor"
+	rPT[6] = "Armadura leve"
+	rExtra[6] = 1
+	rName[7] = "Clothing"
+	rEN[7] = "Clothing"
+	rPT[7] = "Roupas"
+	rExtra[7] = 1
+	rName[8] = "Shield"
+	rEN[8] = "Shields"
+	rPT[8] = "Escudos"
+	rExtra[8] = 1
+	rName[9] = "Jewelry"
+	rEN[9] = "Jewelry"
+	rPT[9] = "Joias"
+	rExtra[9] = 1
+	rName[10] = "Potion"
+	rEN[10] = "Potions"
+	rPT[10] = "Pocoes"
+	rExtra[10] = 0
+	rName[11] = "Poison"
+	rEN[11] = "Poisons"
+	rPT[11] = "Venenos"
+	rExtra[11] = 0
+	rName[12] = "Food"
+	rEN[12] = "Food and drinks"
+	rPT[12] = "Comida e bebidas"
+	rExtra[12] = 0
+	rName[13] = "Ingredient"
+	rEN[13] = "Ingredients"
+	rPT[13] = "Ingredientes"
+	rExtra[13] = 0
+	rName[14] = "Scroll"
+	rEN[14] = "Scrolls"
+	rPT[14] = "Pergaminhos"
+	rExtra[14] = 0
+	rName[15] = "SpellTome"
+	rEN[15] = "Spell tomes"
+	rPT[15] = "Tomos de feitico"
+	rExtra[15] = 0
+	rName[16] = "SkillBook"
+	rEN[16] = "Skill books"
+	rPT[16] = "Livros de skill"
+	rExtra[16] = 0
+	rName[17] = "BookOther"
+	rEN[17] = "Other books and notes"
+	rPT[17] = "Outros livros e notas"
+	rExtra[17] = 0
+	rName[18] = "Key"
+	rEN[18] = "Keys"
+	rPT[18] = "Chaves"
+	rExtra[18] = 0
+	rName[19] = "SoulGemEmpty"
+	rEN[19] = "Empty soul gems"
+	rPT[19] = "Gemas de alma vazias"
+	rExtra[19] = 0
+	rName[20] = "SoulGemFilled"
+	rEN[20] = "Filled soul gems"
+	rPT[20] = "Gemas de alma cheias"
+	rExtra[20] = 0
+	rName[21] = "Gem"
+	rEN[21] = "Gems"
+	rPT[21] = "Gemas"
+	rExtra[21] = 0
+	rName[22] = "Ingot"
+	rEN[22] = "Ingots"
+	rPT[22] = "Barras"
+	rExtra[22] = 0
+	rName[23] = "Ore"
+	rEN[23] = "Loose ore"
+	rPT[23] = "Minerio solto"
+	rExtra[23] = 0
+	rName[24] = "Lockpick"
+	rEN[24] = "Lockpicks"
+	rPT[24] = "Lockpicks"
+	rExtra[24] = 0
+	rName[25] = "Gold"
+	rEN[25] = "Gold"
+	rPT[25] = "Ouro"
+	rExtra[25] = 0
+	rName[26] = "Torch"
+	rEN[26] = "Torches and lights"
+	rPT[26] = "Tochas e luzes"
+	rExtra[26] = 0
+	rName[27] = "MiscOther"
+	rEN[27] = "Other misc items"
+	rPT[27] = "Outros itens diversos"
+	rExtra[27] = 0
+	rName[28] = "Flora"
+	rEN[28] = "Flora (harvest)"
+	rPT[28] = "Flora (colher)"
+	rExtra[28] = 0
+	rName[29] = "OreVein"
+	rEN[29] = "Ore veins"
+	rPT[29] = "Filoes de minerio"
+	rExtra[29] = 0
+	n = 0
+	while n < 30
+		oPick[n] = -1
+		oGlow[n] = -1
+		oColor[n] = -1
+		oMinVal[n] = -1
+		oMinVpw[n] = -1
+		oMinX[n] = -1
+		n += 1
+	endwhile
+	oALKeyToggle = -1
+	oALKeyHold = -1
+	oALPadToggle = -1
+	oALPadHold = -1
 	n = 0
 	while n < pOptKey.Length
 		pOptKey[n] = -1
@@ -679,6 +877,46 @@ Event OnPageReset(string a_page)
 		AddHeaderOption(L("Corpse loot filters", "Filtros do loot dos cadaveres"))
 		AddToggleRange(34, 39)
 		AddSliderRange(16, 16)
+	elseif a_page == Pages[4]
+		AddHeaderOption(L("Auto-loot", "Apanhar automatico"))
+		AddToggleRange(41, 42)
+		AddSliderRange(17, 20)
+		AddHeaderOption(L("Activation (0 / None = off)", "Ativacao (0 / Nenhum = desligado)"))
+		oALKeyToggle = AddKeyMapOption(L("Toggle key (press to turn on/off)", "Tecla de ligar/desligar"), BetterLootingNative.GetInt("iALToggleKey", 0))
+		oALKeyHold = AddKeyMapOption(L("Hold key (works while pressed)", "Tecla para manter premida"), BetterLootingNative.GetInt("iALHoldKey", 0))
+		oALPadToggle = AddMenuOption(L("Gamepad toggle button", "Botao do comando: ligar/desligar"), padName[PadIndex(BetterLootingNative.GetInt("iALPadToggle", 0))])
+		oALPadHold = AddMenuOption(L("Gamepad hold button", "Botao do comando: manter premido"), padName[PadIndex(BetterLootingNative.GetInt("iALPadHold", 0))])
+	elseif a_page == Pages[5]
+		SetCursorFillMode(LEFT_TO_RIGHT)
+		AddHeaderOption(L("Pick up", "Apanhar"))
+		AddHeaderOption(L("Glow", "Brilho"))
+		int r = 0
+		while r < 30
+			oPick[r] = AddToggleOption(L(rEN[r], rPT[r]) + " - " + L("pick up", "apanhar"), BetterLootingNative.GetRule("Type." + rName[r], "Pick", 0) != 0)
+			oGlow[r] = AddToggleOption(L(rEN[r], rPT[r]) + " - " + L("glow", "brilho"), BetterLootingNative.GetRule("Type." + rName[r], "Glow", 0) != 0)
+			r += 1
+		endwhile
+	elseif a_page == Pages[6]
+		AddHeaderOption(L("Glow color per type", "Cor do brilho por tipo"))
+		int c = 0
+		while c < 30
+			oColor[c] = AddMenuOption(L(rEN[c], rPT[c]), ColorName(BetterLootingNative.GetRule("Type." + rName[c], "Color", 0)))
+			c += 1
+		endwhile
+	elseif a_page == Pages[7]
+		SetCursorFillMode(LEFT_TO_RIGHT)
+		AddHeaderOption(L("Minimum value / value per weight", "Valor minimo / valor por peso"))
+		AddHeaderOption(L("Minimum armor rating / damage", "Armadura minima / dano minimo"))
+		int s = 0
+		while s < 28
+			oMinVal[s] = AddSliderOption(L(rEN[s], rPT[s]) + " - " + L("min value", "valor min."), BetterLootingNative.GetRule("Type." + rName[s], "MinValue", 0) as float, "{0}")
+			oMinVpw[s] = AddSliderOption(L(rEN[s], rPT[s]) + " - " + L("min value/weight", "valor/peso min."), BetterLootingNative.GetRule("Type." + rName[s], "MinValuePerWeight", 0) as float, "{0}")
+			if rExtra[s] != 0
+				oMinX[s] = AddSliderOption(L(rEN[s], rPT[s]) + " - " + ExtraLabel(s), BetterLootingNative.GetRule("Type." + rName[s], ExtraKey(s), 0) as float, "{0}")
+				AddEmptyOption()
+			endif
+			s += 1
+		endwhile
 	endif
 EndEvent
 
@@ -757,6 +995,238 @@ Function SetKey(string a_key, int a_option, int a_code)
 	SetKeyMapOptionValue(a_option, code)
 EndFunction
 
+string Function ExtraKey(int i)
+	if rExtra[i] == 1
+		return "MinArmor"
+	endif
+	return "MinDamage"
+EndFunction
+
+string Function ExtraLabel(int i)
+	if rExtra[i] == 1
+		return L("min armor", "armadura min.")
+	endif
+	return L("min damage", "dano min.")
+EndFunction
+
+string Function RuleSection(int i)
+	return "Type." + rName[i]
+EndFunction
+
+int Function FindIn(int[] arr, int a_option)
+	int i = 0
+	while i < arr.Length
+		if arr[i] == a_option
+			return i
+		endif
+		i += 1
+	endwhile
+	return -1
+EndFunction
+
+Function ToggleRule(int i, string key, int a_option)
+	int v = 1
+	if BetterLootingNative.GetRule(RuleSection(i), key, 0) != 0
+		v = 0
+	endif
+	BetterLootingNative.SetRule(RuleSection(i), key, v)
+	SetToggleOptionValue(a_option, v != 0)
+EndFunction
+
+bool Function ResetAutoOption(int a_option)
+	int i = FindIn(oPick, a_option)
+	if i >= 0
+		BetterLootingNative.SetRule(RuleSection(i), "Pick", 0)
+		SetToggleOptionValue(a_option, false)
+		return true
+	endif
+	i = FindIn(oGlow, a_option)
+	if i >= 0
+		BetterLootingNative.SetRule(RuleSection(i), "Glow", 0)
+		SetToggleOptionValue(a_option, false)
+		return true
+	endif
+	i = FindIn(oColor, a_option)
+	if i >= 0
+		BetterLootingNative.SetRule(RuleSection(i), "Color", 0)
+		SetMenuOptionValue(a_option, ColorName(0))
+		return true
+	endif
+	i = FindIn(oMinVal, a_option)
+	if i >= 0
+		BetterLootingNative.SetRule(RuleSection(i), "MinValue", 0)
+		SetSliderOptionValue(a_option, 0.0, "{0}")
+		return true
+	endif
+	i = FindIn(oMinVpw, a_option)
+	if i >= 0
+		BetterLootingNative.SetRule(RuleSection(i), "MinValuePerWeight", 0)
+		SetSliderOptionValue(a_option, 0.0, "{0}")
+		return true
+	endif
+	i = FindIn(oMinX, a_option)
+	if i >= 0
+		BetterLootingNative.SetRule(RuleSection(i), ExtraKey(i), 0)
+		SetSliderOptionValue(a_option, 0.0, "{0}")
+		return true
+	endif
+	if a_option == oALKeyToggle
+		SetKey("iALToggleKey", a_option, 0)
+		return true
+	elseif a_option == oALKeyHold
+		SetKey("iALHoldKey", a_option, 0)
+		return true
+	elseif a_option == oALPadToggle
+		BetterLootingNative.SetInt("iALPadToggle", 0)
+		SetMenuOptionValue(a_option, padName[0])
+		return true
+	elseif a_option == oALPadHold
+		BetterLootingNative.SetInt("iALPadHold", 0)
+		SetMenuOptionValue(a_option, padName[0])
+		return true
+	endif
+	return false
+EndFunction
+
+bool Function AutoSliderOpen(int a_option)
+	int i = FindIn(oMinVal, a_option)
+	if i >= 0
+		SetSliderDialogStartValue(BetterLootingNative.GetRule(RuleSection(i), "MinValue", 0) as float)
+		SetSliderDialogDefaultValue(0.0)
+		SetSliderDialogRange(0.0, 5000.0)
+		SetSliderDialogInterval(10.0)
+		return true
+	endif
+	i = FindIn(oMinVpw, a_option)
+	if i >= 0
+		SetSliderDialogStartValue(BetterLootingNative.GetRule(RuleSection(i), "MinValuePerWeight", 0) as float)
+		SetSliderDialogDefaultValue(0.0)
+		SetSliderDialogRange(0.0, 500.0)
+		SetSliderDialogInterval(5.0)
+		return true
+	endif
+	i = FindIn(oMinX, a_option)
+	if i >= 0
+		SetSliderDialogStartValue(BetterLootingNative.GetRule(RuleSection(i), ExtraKey(i), 0) as float)
+		SetSliderDialogDefaultValue(0.0)
+		if rExtra[i] == 1
+			SetSliderDialogRange(0.0, 200.0)
+		else
+			SetSliderDialogRange(0.0, 300.0)
+		endif
+		SetSliderDialogInterval(5.0)
+		return true
+	endif
+	return false
+EndFunction
+
+bool Function AutoSliderAccept(int a_option, float a_value)
+	int i = FindIn(oMinVal, a_option)
+	if i >= 0
+		BetterLootingNative.SetRule(RuleSection(i), "MinValue", a_value as int)
+		SetSliderOptionValue(a_option, a_value, "{0}")
+		return true
+	endif
+	i = FindIn(oMinVpw, a_option)
+	if i >= 0
+		BetterLootingNative.SetRule(RuleSection(i), "MinValuePerWeight", a_value as int)
+		SetSliderOptionValue(a_option, a_value, "{0}")
+		return true
+	endif
+	i = FindIn(oMinX, a_option)
+	if i >= 0
+		BetterLootingNative.SetRule(RuleSection(i), ExtraKey(i), a_value as int)
+		SetSliderOptionValue(a_option, a_value, "{0}")
+		return true
+	endif
+	return false
+EndFunction
+
+bool Function AutoMenuOpen(int a_option)
+	string[] opts
+	int i = FindIn(oColor, a_option)
+	if i >= 0
+		opts = new string[5]
+		opts[0] = ColorName(0)
+		opts[1] = ColorName(1)
+		opts[2] = ColorName(2)
+		opts[3] = ColorName(3)
+		opts[4] = ColorName(4)
+		SetMenuDialogOptions(opts)
+		SetMenuDialogStartIndex(BetterLootingNative.GetRule(RuleSection(i), "Color", 0))
+		SetMenuDialogDefaultIndex(0)
+		return true
+	endif
+	if a_option == oALPadToggle || a_option == oALPadHold
+		opts = new string[17]
+		int j = 0
+		while j < 17
+			opts[j] = padName[j]
+			j += 1
+		endwhile
+		SetMenuDialogOptions(opts)
+		if a_option == oALPadToggle
+			SetMenuDialogStartIndex(PadIndex(BetterLootingNative.GetInt("iALPadToggle", 0)))
+		else
+			SetMenuDialogStartIndex(PadIndex(BetterLootingNative.GetInt("iALPadHold", 0)))
+		endif
+		SetMenuDialogDefaultIndex(0)
+		return true
+	endif
+	return false
+EndFunction
+
+bool Function AutoMenuAccept(int a_option, int a_index)
+	int i = FindIn(oColor, a_option)
+	if i >= 0
+		BetterLootingNative.SetRule(RuleSection(i), "Color", a_index)
+		SetMenuOptionValue(a_option, ColorName(a_index))
+		return true
+	endif
+	if a_option == oALPadToggle
+		BetterLootingNative.SetInt("iALPadToggle", padMask[a_index])
+		SetMenuOptionValue(a_option, padName[a_index])
+		return true
+	elseif a_option == oALPadHold
+		BetterLootingNative.SetInt("iALPadHold", padMask[a_index])
+		SetMenuOptionValue(a_option, padName[a_index])
+		return true
+	endif
+	return false
+EndFunction
+
+bool Function AutoHighlight(int a_option)
+	if a_option == oALKeyToggle || a_option == oALPadToggle
+		SetInfoText(L("One press turns auto-loot on or off. It needs the Auto-loot option turned on.", "Um toque liga ou desliga o apanhar automatico. Precisa da opcao Apanhar automatico ligada."))
+		return true
+	elseif a_option == oALKeyHold || a_option == oALPadHold
+		SetInfoText(L("Auto-loot works while you hold this key or button.", "O apanhar automatico funciona enquanto mantiveres esta tecla ou botao premido."))
+		return true
+	endif
+	int i = FindIn(oPick, a_option)
+	if i >= 0
+		SetInfoText(L("Pick up this type by itself. Never touches anything owned by someone, corpses or containers. Books open when picked up.", "Apanhar este tipo sozinho. Nunca toca no que tem dono, em cadaveres nem em contentores. Os livros abrem ao serem apanhados."))
+		return true
+	endif
+	i = FindIn(oGlow, a_option)
+	if i >= 0
+		SetInfoText(L("Make this type glow when it is near you and passes the limits.", "Dar brilho a este tipo quando esta perto e passa nos limiares."))
+		return true
+	endif
+	i = FindIn(oMinVal, a_option)
+	if i < 0
+		i = FindIn(oMinVpw, a_option)
+	endif
+	if i < 0
+		i = FindIn(oMinX, a_option)
+	endif
+	if i >= 0
+		SetInfoText(L("0 = off. All the limits of the type must be met. Name filters and forbid lists are in BetterLooting_AutoLoot.ini.", "0 = desligado. Todos os limiares do tipo tem de ser cumpridos. Os filtros de nome e as listas de proibicao estao no BetterLooting_AutoLoot.ini."))
+		return true
+	endif
+	return false
+EndFunction
+
 Event OnOptionSelect(int a_option)
 	int i = FindToggle(a_option)
 	if i >= 0
@@ -766,10 +1236,23 @@ Event OnOptionSelect(int a_option)
 		endif
 		BetterLootingNative.SetInt(tKey[i], v)
 		SetToggleOptionValue(a_option, v != 0)
+		return
+	endif
+	i = FindIn(oPick, a_option)
+	if i >= 0
+		ToggleRule(i, "Pick", a_option)
+		return
+	endif
+	i = FindIn(oGlow, a_option)
+	if i >= 0
+		ToggleRule(i, "Glow", a_option)
 	endif
 EndEvent
 
 Event OnOptionDefault(int a_option)
+	if ResetAutoOption(a_option)
+		return
+	endif
 	int i = FindToggle(a_option)
 	if i >= 0
 		int d = BetterLootingNative.GetDefault(tKey[i], 0)
@@ -837,6 +1320,9 @@ Event OnOptionDefault(int a_option)
 EndEvent
 
 Event OnOptionSliderOpen(int a_option)
+	if AutoSliderOpen(a_option)
+		return
+	endif
 	int i = FindSlider(a_option)
 	if i >= 0
 		SetSliderDialogStartValue(BetterLootingNative.GetInt(sKey[i], 0) as float)
@@ -847,6 +1333,9 @@ Event OnOptionSliderOpen(int a_option)
 EndEvent
 
 Event OnOptionSliderAccept(int a_option, float a_value)
+	if AutoSliderAccept(a_option, a_value)
+		return
+	endif
 	int i = FindSlider(a_option)
 	if i >= 0
 		BetterLootingNative.SetInt(sKey[i], a_value as int)
@@ -855,6 +1344,9 @@ Event OnOptionSliderAccept(int a_option, float a_value)
 EndEvent
 
 Event OnOptionMenuOpen(int a_option)
+	if AutoMenuOpen(a_option)
+		return
+	endif
 	string[] opts
 	int cur = 0
 	int dflt = 0
@@ -945,6 +1437,9 @@ Event OnOptionMenuAccept(int a_option, int a_index)
 	if a_index < 0
 		return
 	endif
+	if AutoMenuAccept(a_option, a_index)
+		return
+	endif
 	int pk = FindPadKey(a_option)
 	int pm = FindPadMod(a_option)
 	int k = FindMod(a_option)
@@ -984,6 +1479,13 @@ Event OnOptionMenuAccept(int a_option, int a_index)
 EndEvent
 
 Event OnOptionKeyMapChange(int a_option, int a_keyCode, string a_conflictControl, string a_conflictName)
+	if a_option == oALKeyToggle
+		SetKey("iALToggleKey", a_option, a_keyCode)
+		return
+	elseif a_option == oALKeyHold
+		SetKey("iALHoldKey", a_option, a_keyCode)
+		return
+	endif
 	int i = FindKey(a_option)
 	if i >= 0
 		SetKey(aKey[i], a_option, a_keyCode)
@@ -991,6 +1493,9 @@ Event OnOptionKeyMapChange(int a_option, int a_keyCode, string a_conflictControl
 EndEvent
 
 Event OnOptionHighlight(int a_option)
+	if AutoHighlight(a_option)
+		return
+	endif
 	int i = FindKey(a_option)
 	if i >= 0
 		if i == 7

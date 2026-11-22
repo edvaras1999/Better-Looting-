@@ -8,6 +8,7 @@
 #include "Hooks.h"
 #include "Papyrus.h"
 #include "Highlight.h"
+#include "AutoLoot.h"
 
 //========================================================
 // skse plugin
@@ -29,7 +30,7 @@ public:
 		}
 
 		SetName("BetterLooting");
-		SetVersion(13);
+		SetVersion(14);
 
 		return true;
 	}
@@ -56,6 +57,7 @@ public:
 		Settings::Load();
 
 		Highlight::Init();
+		AutoLoot::Load();
 
 		if (LootMenu::Install())
 		{

@@ -15,3 +15,9 @@ Function ApplyVisual() global native
 
 ; Escreve uma linha no log do plugin (diagnostico).
 Function Log(string msg) global native
+
+; Valor de uma regra do apanhar automatico (ficheiro BetterLooting_AutoLoot.ini). Ex.: section "Type.Gold", key "Pick".
+int Function GetRule(string section, string key, int defaultValue) global native
+
+; Altera uma regra do apanhar automatico e grava-a no BetterLooting_AutoLoot.ini.
+Function SetRule(string section, string key, int value) global native
