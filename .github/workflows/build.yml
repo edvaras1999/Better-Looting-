@@ -25,7 +25,8 @@ jobs:
             'UTF8.cpp' = 'betterlooting'; 'Equip.cpp' = 'betterlooting'; 'Equip.h' = 'betterlooting'; 'BetterLooting.vcxproj' = 'betterlooting'
             'Papyrus.cpp' = 'betterlooting'; 'Papyrus.h' = 'betterlooting'
             'Highlight.cpp' = 'betterlooting'; 'Highlight.h' = 'betterlooting'
-            'BetterLooting.ini' = 'dist\Data\SKSE\Plugins'; 'LootMenuIE.swf' = 'dist\Data\Interface'; 'LootMenuRedesigned.swf' = 'dist\Data\Interface'
+            'AutoLoot.cpp' = 'betterlooting'; 'AutoLoot.h' = 'betterlooting'
+            'BetterLooting.ini' = 'dist\Data\SKSE\Plugins'; 'BetterLooting_AutoLoot.ini' = 'dist\Data\SKSE\Plugins'; 'LootMenuIE.swf' = 'dist\Data\Interface'; 'LootMenuRedesigned.swf' = 'dist\Data\Interface'
             'Quick_Loot_1_1f_Source_Files__for_modders_-73096-1-1f.7z' = 'third_party'
           }
           foreach ($name in $map.Keys) {
@@ -43,6 +44,18 @@ jobs:
             New-Item -ItemType Directory -Force $dir | Out-Null
             Move-Item $f.FullName (Join-Path $dir $f.Name) -Force
             Write-Host "Movido para third_party: $($f.Name)"
+          }
+
+      - name: Garantir que nenhum fonte C++ fica de fora
+        shell: pwsh
+        run: |
+          # Qualquer .cpp/.h/.vcxproj solto na raiz (por exemplo um ficheiro novo como AutoLoot.cpp) vai para betterlooting.
+          $ws = $env:GITHUB_WORKSPACE
+          $dir = Join-Path $ws 'betterlooting'
+          New-Item -ItemType Directory -Force $dir | Out-Null
+          foreach ($f in Get-ChildItem $ws -File | Where-Object { $_.Extension -in '.cpp', '.h', '.vcxproj' }) {
+            Move-Item $f.FullName (Join-Path $dir $f.Name) -Force
+            Write-Host "Movido (rede de seguranca): $($f.Name) -> betterlooting"
           }
 
       - name: Preparar o MSBuild
@@ -155,10 +168,11 @@ jobs:
             'Settings.cpp' = 'betterlooting'; 'Settings.h' = 'betterlooting'; 'Console.cpp' = 'betterlooting'; 'Console.h' = 'betterlooting'
             'UTF8.cpp' = 'betterlooting'; 'Equip.cpp' = 'betterlooting'; 'Equip.h' = 'betterlooting'; 'BetterLooting.vcxproj' = 'betterlooting'; 'Papyrus.cpp' = 'betterlooting'; 'Papyrus.h' = 'betterlooting'
             'Highlight.cpp' = 'betterlooting'; 'Highlight.h' = 'betterlooting'
+            'AutoLoot.cpp' = 'betterlooting'; 'AutoLoot.h' = 'betterlooting'
             'BetterLootingNative.psc' = 'papyrus\src'; 'BetterLootingMCM.psc' = 'papyrus\src'
             'Form.psc' = 'papyrus\stubs'; 'Quest.psc' = 'papyrus\stubs'; 'SKI_ConfigBase.psc' = 'papyrus\stubs'; 'SKI_QuestBase.psc' = 'papyrus\stubs'
             'TESV_Papyrus_Flags.flg' = 'papyrus'
-            'BetterLooting.ini' = 'dist\Data\SKSE\Plugins'; 'LootMenuIE.swf' = 'dist\Data\Interface'; 'LootMenuRedesigned.swf' = 'dist\Data\Interface'
+            'BetterLooting.ini' = 'dist\Data\SKSE\Plugins'; 'BetterLooting_AutoLoot.ini' = 'dist\Data\SKSE\Plugins'; 'LootMenuIE.swf' = 'dist\Data\Interface'; 'LootMenuRedesigned.swf' = 'dist\Data\Interface'
             'BetterLooting.esp' = 'dist\Data'; 'BetterLooting.seq' = 'dist\Data\SEQ'
             'make_esp.py' = 'tools'
             'BetterLooting_Gold.dds' = 'dist\Data\Textures\Effects\Gradients'; 'BetterLooting_White.dds' = 'dist\Data\Textures\Effects\Gradients'
@@ -284,10 +298,11 @@ jobs:
             'Settings.cpp' = 'betterlooting'; 'Settings.h' = 'betterlooting'; 'Console.cpp' = 'betterlooting'; 'Console.h' = 'betterlooting'
             'UTF8.cpp' = 'betterlooting'; 'Equip.cpp' = 'betterlooting'; 'Equip.h' = 'betterlooting'; 'BetterLooting.vcxproj' = 'betterlooting'; 'Papyrus.cpp' = 'betterlooting'; 'Papyrus.h' = 'betterlooting'
             'Highlight.cpp' = 'betterlooting'; 'Highlight.h' = 'betterlooting'
+            'AutoLoot.cpp' = 'betterlooting'; 'AutoLoot.h' = 'betterlooting'
             'BetterLootingNative.psc' = 'papyrus\src'; 'BetterLootingMCM.psc' = 'papyrus\src'
             'Form.psc' = 'papyrus\stubs'; 'Quest.psc' = 'papyrus\stubs'; 'SKI_ConfigBase.psc' = 'papyrus\stubs'; 'SKI_QuestBase.psc' = 'papyrus\stubs'
             'TESV_Papyrus_Flags.flg' = 'papyrus'
-            'BetterLooting.ini' = 'dist\Data\SKSE\Plugins'; 'LootMenuIE.swf' = 'dist\Data\Interface'; 'LootMenuRedesigned.swf' = 'dist\Data\Interface'
+            'BetterLooting.ini' = 'dist\Data\SKSE\Plugins'; 'BetterLooting_AutoLoot.ini' = 'dist\Data\SKSE\Plugins'; 'LootMenuIE.swf' = 'dist\Data\Interface'; 'LootMenuRedesigned.swf' = 'dist\Data\Interface'
             'BetterLooting.esp' = 'dist\Data'; 'BetterLooting.seq' = 'dist\Data\SEQ'
             'make_esp.py' = 'tools'
             'BetterLooting_Gold.dds' = 'dist\Data\Textures\Effects\Gradients'; 'BetterLooting_White.dds' = 'dist\Data\Textures\Effects\Gradients'
@@ -347,6 +362,7 @@ jobs:
           }
 
           Copy-Item (Join-Path $ws 'dist\Data\SKSE\Plugins\BetterLooting.ini') $plug
+          Copy-Item (Join-Path $ws 'dist\Data\SKSE\Plugins\BetterLooting_AutoLoot.ini') $plug
           Copy-Item (Join-Path $ws 'dist\Data\Interface\LootMenuIE.swf') $iface
           Copy-Item (Join-Path $ws 'dist\Data\Interface\LootMenuRedesigned.swf') $iface
           Copy-Item (Join-Path $ws 'dist\Data\BetterLooting.esp') $data
